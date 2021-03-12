@@ -6,7 +6,7 @@
     "integrations": false,
     "webhooks": false,
     "invites": false,
-    "voice_states": false,
+    "voice_states": true,
     "presences": false,
     "messages": false,
     "guild_messages": true,

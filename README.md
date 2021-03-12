@@ -5,76 +5,31 @@
 [![Open Source Love svg3](https://badges.frapsoft.com/os/v3/open-source.svg?v=103)](https://github.com/csgo-league)
 
 # CS:GO League Bot
-A Discord bot to manage CS:GO PUGs. Connects to the CS:GO League web API.
+A Discord bot to manage CS:GO PUGs. Connects to the CS:GO [G5API](https://github.com/PhlexPlexico/G5API).
 
-Our support discord can be found [here](https://discord.gg/b5MhANU).
 
 # Author
 [cameronshinn](https://github.com/cameronshinn) - Developer / Maintainer
 
-## Watch for releases
 
-So as to keep the latest version of the plugin I recommend watching the repository
+## Setup
+1. First you must have a bot instance to run this script on. Follow Discord's tutorial [here](https://discord.onl/2019/03/21/how-to-set-up-a-bot-application/) on how to set one up. Be sure to invite it to a server before launch the bot.
 
-![Watch releases](https://github.com/b3none/gdprconsent/raw/development/.github/README_ASSETS/watch_releases.png)
-
-## Share the love
-
-If you appreciate the project then please take the time to star our repository.
-
-![Star us](https://github.com/b3none/gdprconsent/raw/development/.github/README_ASSETS/star_us.png)
-
-## Commands
-`q!help` **-** Display the help menu<br>
-
-`q!about` **-** Display basic info about this bot<br>
-
-`q!link` **-** Link a player on the backend<br>
-
-`q!join` **-** Join the queue<br>
-
-`q!leave` **-** Leave the queue<br>
-
-`q!view` **-** Display who is currently in the queue<br>
-
-`q!remove <user mention>` **-** Remove the mentioned user from the queue (need server kick perms)<br>
-
-`q!empty` **-** Empty the queue (need server kick perms)<br>
-
-`q!cap [<new capacity>]` **-** Set or view the capacity of the queue (need admin perms)<br>
-
-`q!ban <user mention> ... [<days>d] [<hours>h] [<minutes>m]` **-** Ban all mentioned users from joining the queue (need server ban perms)<br>
-
-`q!unban <user mention> ...` **-** Unban all mentioned users so they can join the queue (need server ban perms)<br>
-
-`q!teams [{captains|autobalance|random}]` **-** Set or view the team creation method (need admin perms)<br>
-
-`q!captains [{volunteer|rank|random}]` **-** Set or view the captain selection method (need admin perms)<br>
-
-`q!maps [{captains|vote|random}]` **-** Set or view the map selection method (need admin perms)<br>
-
-`q!mpool {+|-}<map name> ...` **-** Add or remove maps from the map pool (need admin perms)<br>
-
-`q!stats` **-** See your stats<br>
-
-`q!leaders` **-** See the top players in the server<br>
-
-## Setup (Linux)
-1. First you must have a bot instance to run this script on. Follow the discord.py tutorial [here](https://discordpy.readthedocs.io/en/latest/discord.html) on how to set one up. Be sure to invite it to a server to use it.
-
-   * The necessary OAuth2 invite permission scopes integer is `17067072`.
-
+   * The required permissions is `administrator`.
    * Enable the "server members intent" for your bot, as shown [here](https://discordpy.readthedocs.io/en/latest/intents.html#privileged-intents).
 
-2. Setup and get an API token for the CS:GO League [web API](https://github.com/csgo-league/csgo-league-web) along with the host base URL.
+2. Install libpq-dev (Linux only?). This is needed to install the psycopg2 Python package.
 
-3. Install libpq-dev with `sudo apt-get install libpq-dev`. This is needed to install the psycopg2 Python package.
+    * Linux command is `sudo apt-get install libpq-dev`.
 
-4. Run `pip3 install -r requirements.txt` in the repository's root directory to get the necessary libraries.
+3. Run `pip3 install -r requirements.txt` in the repository's root directory to get the necessary libraries.
 
-5. Install PostgreSQL 9.5 or higher with `sudo apt-get install postgresql`.
+4. Install PostgreSQL 9.5 or higher.
 
-6. Run the psql tool with `sudo -u postgres psql` and create a database by running the following commands:
+    * Linux command is `sudo apt-get install postgresql`.
+    * Windows users can download [here](https://www.postgresql.org/download/windows).
+
+5. Run the psql tool with `sudo -u postgres psql` and create a database by running the following commands:
 
     ```sql
     CREATE ROLE csgoleague WITH LOGIN PASSWORD 'yourpassword';
@@ -83,25 +38,25 @@ If you appreciate the project then please take the time to star our repository.
 
     Be sure to replace `'yourpassword'` with your own desired password.
 
-7. Create an environment file named `.env` with in the repository's root directory. Fill this template with the requisite information you've gathered:
+    Quit psql with `\q`
 
-    ```ini
-    DISCORD_BOT_TOKEN=B0tT0k3nFr0mD3v3l0p3rP0rtal
+6. Create an environment file named `.env` with in the repository's root directory. Fill this template with the requisite information you've gathered...
 
-    CSGO_LEAGUE_API_KEY=W3bAP1K3y  # From web php.env file
-    CSGO_LEAGUE_API_URL=https://MyCSGOLeagueWebsite.com
+    ```py
+    DISCORD_BOT_TOKEN= #Bot token from the Discord developer portal
+    DISCORD_BOT_LANGUAGE=en # Bot language (key from translations.json), E.g. "en"
 
-    POSTGRESQL_USER=csgoleague
-    POSTGRESQL_PASSWORD=YourPassword  # SET YOUR OWN PASSWORD DO NOT USE THIS
-    POSTGRESQL_DB=csgoleague
-    POSTGRESQL_HOST=127.0.0.1  # 127.0.0.1 if running on the same system as the bot
+    G5API_URL= # URL where the web panel is hosted
+
+    POSTGRESQL_USER= # "csgoleague" (if you used the same username)
+    POSTGRESQL_PASSWORD= # The DB password you set
+    POSTGRESQL_DB= # "csgoleague" (if you used the same DB name)
+    POSTGRESQL_HOST= # The IP address of the DB server (127.0.0.1 if running on the same system as the bot)
     ```
 
-    Optionally you may set these environment variables another way.
+7. Apply the database migrations by running `python3 migrate.py up`.
 
-8. Apply the database migrations by running `python3 migrate.py up`.
-
-9. Run the launcher Python script by calling `python3 launcher.py -e {server ID}`. You will only need to use the `-e` flag when running for the first time to create the emojis in your server (be sure to give the bot the "manage emojis" permission in your server). Look [here](https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID-#) for help finding your Discord server's ID.
+8. Run the launcher Python script by running, `python3 launcher.py`.
 
 ## Contributions
 
