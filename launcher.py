@@ -1,10 +1,8 @@
 # launcher.py
 
-from bot.bot import LeagueBot
+from bot.bot import PUGsBot
 
 import argparse
-import asyncio
-import asyncpg
 from dotenv import load_dotenv
 import os
 
@@ -23,10 +21,10 @@ def run_bot():
     if api_url.endswith('/'):
         api_url = api_url[:-1]
     # Instantiate bot and run
-    bot = LeagueBot(bot_token, api_url, db_connect_url)
+    bot = PUGsBot(bot_token, api_url, db_connect_url)
     bot.run()
 
 
 if __name__ == '__main__':
-    argparse.ArgumentParser(description='Run the CS:GO League bot')
+    argparse.ArgumentParser(description='Run the CS:GO PUGs bot')
     run_bot()

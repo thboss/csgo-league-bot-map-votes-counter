@@ -1,4 +1,4 @@
-# leaguebot.py
+# bot.py
 
 import discord
 from discord.ext import commands
@@ -19,7 +19,7 @@ _CWD = os.path.dirname(os.path.abspath(__file__))
 INTENTS_JSON = os.path.join(_CWD, 'intents.json')
 
 
-class LeagueBot(commands.AutoShardedBot):
+class PUGsBot(commands.AutoShardedBot):
     """ Sub-classed AutoShardedBot modified to fit the needs of the application. """
 
     def __init__(self, discord_token, web_url, db_connect_url):
@@ -46,7 +46,7 @@ class LeagueBot(commands.AutoShardedBot):
         }
 
         self.activity = discord.Activity(type=discord.ActivityType.watching, name="noobs use g!help")
-        self.logger = logging.getLogger('csgoleague.bot')
+        self.logger = logging.getLogger('PUGs.bot')
 
         # Create DB helper to use connection pool
         self.db = utils.DBHelper(self.db_connect_url)

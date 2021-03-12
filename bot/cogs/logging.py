@@ -37,7 +37,7 @@ LOGGING_CONFIG = {
         }
     },
     'loggers': {
-        'csgoleague': {
+        'PUGs': {
             'level': 'DEBUG'
         },
         'discord.client': {
@@ -73,7 +73,7 @@ def log_lines(lvl, msg, *args, sub_lines=None, **kwargs):
         for prefix, suffix in sub_lines.items():
             msg += '\n    {:<{width}} {}'.format(prefix + ':', suffix, width=longest_subl_pref + 1)
 
-    logging.getLogger('csgoleague.bot').log(lvl, msg, *args, **kwargs)
+    logging.getLogger('PUGs.bot').log(lvl, msg, *args, **kwargs)
 
 
 class LoggingCog(commands.Cog):
@@ -82,7 +82,7 @@ class LoggingCog(commands.Cog):
     def __init__(self, bot):
         """ Set bot attribute. """
         self.bot = bot
-        self.logger = logging.getLogger('csgoleague.bot')
+        self.logger = logging.getLogger('PUGs.bot')
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):

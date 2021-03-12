@@ -32,8 +32,8 @@ A Discord bot to manage CS:GO PUGs. Connects to [G5API](https://github.com/Phlex
 5. Run the psql tool with `sudo -u postgres psql` and create a database by running the following commands:
 
     ```sql
-    CREATE ROLE csgoleague WITH LOGIN PASSWORD 'yourpassword';
-    CREATE DATABASE csgoleague OWNER csgoleague;
+    CREATE ROLE PUGs WITH LOGIN PASSWORD 'yourpassword';
+    CREATE DATABASE PUGs OWNER PUGs;
     ```
 
     Be sure to replace `'yourpassword'` with your own desired password.
@@ -48,9 +48,9 @@ A Discord bot to manage CS:GO PUGs. Connects to [G5API](https://github.com/Phlex
 
     G5API_URL= # URL where the web panel is hosted
 
-    POSTGRESQL_USER= # "csgoleague" (if you used the same username)
+    POSTGRESQL_USER= # "PUGs" (if you used the same username)
     POSTGRESQL_PASSWORD= # The DB password you set
-    POSTGRESQL_DB= # "csgoleague" (if you used the same DB name)
+    POSTGRESQL_DB= # "PUGs" (if you used the same DB name)
     POSTGRESQL_HOST= # The IP address of the DB server (127.0.0.1 if running on the same system as the bot)
     ```
 

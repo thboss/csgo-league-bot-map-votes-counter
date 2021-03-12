@@ -13,7 +13,7 @@ class DBHelper:
     def __init__(self, connect_url):
         """ Set attributes. """
         loop = asyncio.get_event_loop()
-        self.logger = logging.getLogger('csgoleague.db')
+        self.logger = logging.getLogger('PUGs.db')
         self.logger.info('Creating database connection pool')
         self.pool = loop.run_until_complete(asyncpg.create_pool(connect_url))
 

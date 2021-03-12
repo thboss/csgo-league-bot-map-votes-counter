@@ -84,20 +84,20 @@ class MatchServer:
 
     @property
     def match_page(self):
-        """ Generate the matches CS:GO League page link. """
+        """ Generate the matches G5API page link. """
         if self.web_url:
             return f'{self.web_url}/match/{self.id}'
 
 async def start_request_log(session, ctx, params):
     """"""
     ctx.start = asyncio.get_event_loop().time()
-    logger = logging.getLogger('csgoleague.api')
+    logger = logging.getLogger('PUGs.api')
     logger.info(f'Sending {params.method} request to {params.url}')
 
 
 async def end_request_log(session, ctx, params):
     """"""
-    logger = logging.getLogger('csgoleague.api')
+    logger = logging.getLogger('PUGs.api')
     elapsed = asyncio.get_event_loop().time() - ctx.start
     logger.info(f'Response received from {params.url} ({elapsed:.2f}s)\n'
                 f'    Status: {params.response.status}\n'
@@ -113,7 +113,7 @@ class ApiHelper:
         """ Set attributes. """
         self.bot = bot
         self.web_url = web_url
-        self.logger = logging.getLogger('csgoleague.api')
+        self.logger = logging.getLogger('PUGs.api')
 
         # Register trace config handlers
         trace_config = aiohttp.TraceConfig()
