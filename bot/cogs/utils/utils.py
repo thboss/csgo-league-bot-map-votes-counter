@@ -72,7 +72,7 @@ class Map:
 
 async def create_emojis(bot, guild):
     """ Upload custom map emojis to guilds. """
-    url_path = 'https://raw.githubusercontent.com/thboss/csgo-league-bot/G5/assets/maps/icons/'
+    url_path = 'https://raw.githubusercontent.com/thboss/CSGO-PUGs-Bot/develop/assets/maps/icons/'
     icons_dic = 'assets/maps/icons/'
     icons = os.listdir(icons_dic)
     try:

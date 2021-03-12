@@ -5,7 +5,7 @@ import Levenshtein as lev
 
 from .utils.utils import translate
 
-GITHUB = 'https://github.com/thboss/csgo-league-bot'  # TODO: Use git API to get link to repo?
+GITHUB = 'https://github.com/thboss/CSGO-PUGs-Bot'  # TODO: Use git API to get link to repo?
 
 
 class HelpCog(commands.Cog):
