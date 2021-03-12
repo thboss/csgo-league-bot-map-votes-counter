@@ -2,7 +2,6 @@
 
 import discord
 from discord.ext import commands
-from discord.utils import get
 
 from . import cogs
 from .cogs import utils
@@ -102,7 +101,7 @@ class PUGsBot(commands.AutoShardedBot):
             print('Creating emojis...')
             await create_emojis(self, self.guilds[0])
             print('Bot is ready now!')
-        
+
         lobby_cog = self.get_cog('LobbyCog')
         match_cog = self.get_cog('MatchCog')
         if not match_cog.check_matches.is_running():
@@ -138,7 +137,7 @@ class PUGsBot(commands.AutoShardedBot):
                 pug_data = await self.db.get_pug(channel.id, column='setup_channel')
             except AttributeError:
                 pass
-        
+
         if pug_data is not None and channel.id in pug_data.values():
             self.block_on_channel_delete = True
             try:

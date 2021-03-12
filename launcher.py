@@ -6,7 +6,8 @@ import argparse
 from dotenv import load_dotenv
 import os
 
-load_dotenv() # Load the environment variables in the local .env file
+load_dotenv()  # Load the environment variables in the local .env file
+
 
 def run_bot():
     """ Parse the config file and run the bot. """

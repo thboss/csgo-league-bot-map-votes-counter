@@ -1,7 +1,7 @@
 # 20210225_01-add-matches-table.py
 
 from yoyo import step
-import os
+
 
 __depends__ = {'20200513_01_kPWNp-create-base-tables'}
 

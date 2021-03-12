@@ -11,7 +11,6 @@ from .utils.utils import translate, get_match_config
 from random import shuffle, choice
 from traceback import print_exception
 import sys
-import os
 
 
 class MatchCog(commands.Cog):
@@ -80,7 +79,7 @@ class MatchCog(commands.Cog):
 
         embed.set_author(name=translate("match-id", match.id), url=match.match_page)
         embed.set_thumbnail(url=map_pick[0].image_url)
-        
+
         for team in [team_one, team_two]:
             team_name = f'__Team {team[0].display_name}__'
             team_players = '\n'.join(f'{num}. {user.mention}' for num, user in enumerate(team, start=1))

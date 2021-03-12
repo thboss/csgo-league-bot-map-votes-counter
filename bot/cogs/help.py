@@ -66,7 +66,7 @@ class HelpCog(commands.Cog):
     async def about(self, ctx):
         """ Display the info embed. """
         description = (
-            f'_{translate("bot-description")}_\n\n'
+            f'_{translate("help-bot-description")}_\n\n'
             f'Source code can be found on [GitHub]({GITHUB})'
         )
         embed = self.bot.embed_template(title='__CS:GO PUGs Bot__', description=description)

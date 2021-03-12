@@ -46,7 +46,7 @@ steps = [
             'CREATE TABLE users('
             '    discord_id BIGSERIAL PRIMARY KEY,\n'
             '    steam_id VARCHAR(18) DEFAULT NULL,\n'
-            '    flag VARCHAR(3) DEFAULT NULL'
+            '    flag VARCHAR(3) DEFAULT NULL\n'
             ');'
         ),
         'DROP TABLE users;'
