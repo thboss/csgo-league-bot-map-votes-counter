@@ -5,7 +5,7 @@
 [![Open Source Love svg3](https://badges.frapsoft.com/os/v3/open-source.svg?v=103)](https://github.com/csgo-league)
 
 # CS:GO PUGs Bot
-A Discord bot to manage CS:GO PUGs. Connects to the CS:GO [G5API](https://github.com/PhlexPlexico/G5API).
+A Discord bot to manage CS:GO PUGs. Connects to [G5API](https://github.com/PhlexPlexico/G5API).
 
 
 # Author
