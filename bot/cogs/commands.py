@@ -130,8 +130,8 @@ class CommandsCog(commands.Cog):
 
         awaitables = [
             self.bot.db.update_pug(results[2][0], guild=ctx.guild.id,
-                                                  setup_channel=setup_channel.id,
-                                                  lobby_channel=lobby_channel.id),
+                                                    setup_channel=setup_channel.id,
+                                                    lobby_channel=lobby_channel.id),
             setup_channel.set_permissions(everyone_role, send_messages=False),
             lobby_channel.set_permissions(everyone_role, connect=False),
             lobby_channel.set_permissions(linked_role, connect=True)
