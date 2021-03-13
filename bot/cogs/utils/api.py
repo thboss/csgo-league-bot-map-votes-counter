@@ -205,16 +205,36 @@ class ApiHelper:
             resp_data = await resp.json()
             return {match['id']: match['end_time'] is None for match in resp_data['matches']}
 
+    async def server_status(self, server_id, auth):
+        """"""
+        url = f'{self.web_url}/api/servers/{server_id}/status'
+        data = {
+            'user_id': auth['user_id'],
+            'user_api': auth['api_key'],
+        }
+
+        async with self.session.get(url=url, json=[data]) as resp:
+            return resp.status < 400
+
     async def create_match(self, team_one, team_two, spectators, map_pick, auth):
         """"""
         team1_id = await self.create_team(team_one, auth)
         team2_id = await self.create_team(team_two, auth)
-        server = await self.private_servers(auth)
+        servers = await self.private_servers(auth)
+        match_server = None
+        for server in servers:
+            if await self.server_status(server['id'], auth):
+                match_server = server
+                break
+
+        if not match_server:
+            raise ValueError('No servers!')
+
         url = f'{self.web_url}/api/matches'
         data = {
             'user_id': auth['user_id'],
             'user_api': auth['api_key'],
-            'server_id': server[0]['id'],
+            'server_id': match_server['id'],
             'team1_id': team1_id,
             'team2_id': team2_id,
             'title': '[PUG] Map {MAPNUMBER} of {MAXMAPS}',
@@ -239,7 +259,7 @@ class ApiHelper:
             data['spectator_auths'] = {spec_steams[index]: spec.desplay_name for index, spec in enumerate(spectators)}
 
         async with self.session.post(url=url, json=[data]) as resp:
-            return MatchServer(await resp.json(), server[0], self.web_url)
+            return MatchServer(await resp.json(), match_server, self.web_url)
 
     async def cancel_match(self, match_id, auth):
         """"""
