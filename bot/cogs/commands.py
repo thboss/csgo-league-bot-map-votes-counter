@@ -130,8 +130,8 @@ class CommandsCog(commands.Cog):
 
         awaitables = [
             self.bot.db.update_pug(results[2][0], guild=ctx.guild.id,
-                setup_channel=setup_channel.id,
-                lobby_channel=lobby_channel.id),
+            setup_channel=setup_channel.id,
+            lobby_channel=lobby_channel.id),
             setup_channel.set_permissions(everyone_role, send_messages=False),
             lobby_channel.set_permissions(everyone_role, connect=False),
             lobby_channel.set_permissions(linked_role, connect=True)
@@ -384,7 +384,7 @@ class CommandsCog(commands.Cog):
             embed = self.bot.embed_template()
             embed.add_field(name='__Spectators__',
                             value='No spectators' if not curr_spectators else ''.join(f'{num}. {user.mention}\n'
-                                for num, user in enumerate(curr_spectators, start=1)))
+                            for num, user in enumerate(curr_spectators, start=1)))
             await ctx.send(embed=embed)
             return
 
@@ -521,7 +521,7 @@ class CommandsCog(commands.Cog):
             await ctx.trigger_typing()
             missing_perm = error.missing_perms[0].replace('_', ' ')
             embed = self.bot.embed_template(title=translate('command-required-perm', missing_perm),
-                color=self.bot.colors['red'])
+            color=self.bot.colors['red'])
             await ctx.send(embed=embed)
 
         if isinstance(error, commands.UserInputError):
