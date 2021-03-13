@@ -84,7 +84,7 @@ class CommandsCog(commands.Cog):
         if not afk_channel:
             afk_channel = await ctx.guild.create_voice_channel(name='G5 AFK', category=g5_category)
         if not commands_channel:
-            commands_channel = await ctx.guild.create_text_channel(name='g5-commands', category= g5_category)
+            commands_channel = await ctx.guild.create_text_channel(name='g5-commands', category=g5_category)
 
         guild_data = {
             'linked_role': linked_role.id,
@@ -130,8 +130,8 @@ class CommandsCog(commands.Cog):
 
         awaitables = [
             self.bot.db.update_pug(results[2][0], guild=ctx.guild.id,
-                                                  setup_channel=setup_channel.id,
-                                                  lobby_channel=lobby_channel.id),
+                setup_channel=setup_channel.id,
+                lobby_channel=lobby_channel.id),
             setup_channel.set_permissions(everyone_role, send_messages=False),
             lobby_channel.set_permissions(everyone_role, connect=False),
             lobby_channel.set_permissions(linked_role, connect=True)
@@ -205,6 +205,7 @@ class CommandsCog(commands.Cog):
         await self.bot.db.clear_queued_users(pug_config.id)
         msg = translate('command-empty-success')
         embed = await self.lobby_cog.queue_embed(pug_config, msg)
+        await self.lobby_cog.update_last_msg(pug_config, embed)
 
         lobby_channel = pug_config.lobby_channel
 
@@ -381,9 +382,9 @@ class CommandsCog(commands.Cog):
 
         if prefix is None:
             embed = self.bot.embed_template()
-            embed.add_field(name=f'__Spectators__',
+            embed.add_field(name='__Spectators__',
                             value='No spectators' if not curr_spectators else ''.join(f'{num}. {user.mention}\n'
-                                  for num, user in enumerate(curr_spectators, start=1)))
+                                for num, user in enumerate(curr_spectators, start=1)))
             await ctx.send(embed=embed)
             return
 
@@ -485,7 +486,7 @@ class CommandsCog(commands.Cog):
         user_ids = [user.id for user in ctx.message.mentions]
         unbanned_ids = await self.bot.db.delete_banned_users(ctx.guild.id, *user_ids)
 
-        unbanned_users = [user for user in ctx.message.mentions if user.id in unbanned_ids]        
+        unbanned_users = [user for user in ctx.message.mentions if user.id in unbanned_ids]
         never_banned_users = [user for user in ctx.message.mentions if user.id not in unbanned_ids]
         unbanned_users_str = ', '.join(f'**{user.display_name}**' for user in unbanned_users)
         never_banned_users_str = ', '.join(f'**{user.display_name}**' for user in never_banned_users)
@@ -519,7 +520,8 @@ class CommandsCog(commands.Cog):
         if isinstance(error, commands.MissingPermissions):
             await ctx.trigger_typing()
             missing_perm = error.missing_perms[0].replace('_', ' ')
-            embed = self.bot.embed_template(title=translate('command-required-perm', missing_perm), color=self.bot.colors['red'])
+            embed = self.bot.embed_template(title=translate('command-required-perm', missing_perm),
+                color=self.bot.colors['red'])
             await ctx.send(embed=embed)
 
         if isinstance(error, commands.UserInputError):

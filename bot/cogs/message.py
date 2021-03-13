@@ -272,8 +272,8 @@ class TeamDraftMessage(discord.Message):
                 captain = list(map(users_dict.get, player))
                 self.users_left.remove(captain[0])
                 team.append(captain[0])
-                self.captains_emojis.append(list(self.pick_emojis.keys())
-                    [list(self.pick_emojis.values()).index(captain[0])])
+                captain_emoji_index = list(self.pick_emojis.values()).index(captain[0])
+                self.captains_emojis.append(list(self.pick_emojis.keys())[captain_emoji_index])
         elif captain_method == 'random':
             temp_users = self.users_left.copy()
             shuffle(temp_users)
@@ -282,9 +282,9 @@ class TeamDraftMessage(discord.Message):
                 captain = temp_users.pop()
                 self.users_left.remove(captain)
                 team.append(captain)
-                self.captains_emojis.append(list(self.pick_emojis.keys())
-                    [list(self.pick_emojis.values()).index(captain)])
-        else: # captain_method is volunteer
+                captain_emoji_index = list(self.pick_emojis.values()).index(captain)
+                self.captains_emojis.append(list(self.pick_emojis.keys())[captain_emoji_index])
+        else:  # captain_method is volunteer
             pass
 
         await self.edit(embed=self._picker_embed(translate('message-team-draft-begun')))
@@ -435,9 +435,10 @@ class MapVoteMessage(discord.Message):
     def _vote_embed(self):
         embed = self.bot.embed_template(title=translate('message-vote-map-started'))
         str_value = '--------------------\n'
+        max_map = max(self.map_votes.values())
         str_value += '\n'.join(
             f'{EMOJI_NUMBERS[self.map_votes[m.emoji]]} {m.emoji} {m.name} '
-            f'{":small_orange_diamond:" if self.map_votes[m.emoji] == max(self.map_votes.values()) and self.map_votes[m.emoji] != 0 else ""} '
+            f'{"🔸" if self.map_votes[m.emoji] == max_map and self.map_votes[m.emoji] != 0 else ""} '
             for m in self.map_pool)
         embed.add_field(name=f':repeat_one: :map: {translate("message-maps")}', value=str_value)
         embed.set_footer(text=translate('message-vote-map-footer'))

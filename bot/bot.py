@@ -9,7 +9,6 @@ from .cogs.utils.utils import create_emojis
 
 import json
 import sys
-import traceback
 import os
 import logging
 

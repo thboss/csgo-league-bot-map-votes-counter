@@ -167,14 +167,16 @@ class LobbyCog(commands.Cog):
                                 await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
                             else:
                                 await ready_msg.clear_reactions()
-                                new_match = await match_cog.start_match(queued_users, ready_msg, after_pug_config, guild_config)
-
+                                new_match = await match_cog.start_match(queued_users, ready_msg, after_pug_config,
+                                                                        guild_config)
                                 if new_match:
                                     await self.bot.db.clear_queued_users(after_pug_config.id)
                                 else:
                                     awaitables = [self.bot.db.clear_queued_users(after_pug_config.id)]
-                                    for user in queued_users: awaitables.append(user.add_roles(linked_role))
-                                    for user in queued_users: awaitables.append(user.move_to(afk_channel))
+                                    for user in queued_users:
+                                        awaitables.append(user.add_roles(linked_role))
+                                    for user in queued_users:
+                                        awaitables.append(user.move_to(afk_channel))
                                     await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
 
                             title = translate('lobby-players-in-lobby')

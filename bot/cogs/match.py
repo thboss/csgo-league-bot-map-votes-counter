@@ -201,7 +201,7 @@ class MatchCog(commands.Cog):
             'team1_channel': team1_channel.id,
             'team2_channel': team2_channel.id,
             'team1_name': team_one[0].display_name,
-            'team2_name': team_two[0].display_name            
+            'team2_name': team_two[0].display_name
         }
 
         awaitables.append(self.bot.db.update_match(match_id, **match_data))
