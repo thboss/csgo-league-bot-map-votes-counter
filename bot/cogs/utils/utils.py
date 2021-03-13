@@ -149,7 +149,8 @@ class GuildConfig:
 
 class PUGConfig:
     """"""
-    def __init__(self, id, guild, setup_channel, lobby_channel, capacity, team_method, captain_method, map_method, mpool):
+    def __init__(self, id, guild, setup_channel, lobby_channel, capacity,
+                 team_method, captain_method, map_method, mpool):
         self.id = id
         self.guild = guild
         self.setup_channel = setup_channel
@@ -177,7 +178,8 @@ class PUGConfig:
 
 class MatchConfig:
     """"""
-    def __init__(self, id, guild_config, pug_config, message, category, team1_channel, team2_channel, team1_name, team2_name, team1_users, team2_users):
+    def __init__(self, id, guild_config, pug_config, message, category, team1_channel,
+                 team2_channel, team1_name, team2_name, team1_users, team2_users):
         self.id = id
         self.guild_config = guild_config
         self.pug_config = pug_config

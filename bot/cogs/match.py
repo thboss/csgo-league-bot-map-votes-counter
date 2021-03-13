@@ -85,9 +85,9 @@ class MatchCog(commands.Cog):
             team_players = '\n'.join(f'{num}. {user.mention}' for num, user in enumerate(team, start=1))
             embed.add_field(name=team_name, value=team_players)
 
-        embed.add_field(name=f"__{translate('match-spectators')}__",
-                        value=translate('match-no-spectators') if not spectators else ''.join(f'{num}. {user.mention}\n'
-                                    for num, user in enumerate(spectators, start=1)))
+        embed.add_field(name=translate('match-spectators'),
+                        value=translate('match-no-spectators') if not spectators
+                        else ''.join(f'{num}. {user.mention}\n' for num, user in enumerate(spectators, start=1)))
         embed.set_footer(text=translate('match-server-message-footer'))
         return embed
 
@@ -98,14 +98,14 @@ class MatchCog(commands.Cog):
                 team_one, team_two = await self.draft_teams(message, users, pug_config)
             elif pug_config.team_method == 'autobalance':
                 team_one, team_two = await self.autobalance_teams(users)
-            else: # team_method is random
+            else:  # team_method is random
                 team_one, team_two = await self.randomize_teams(users)
 
             if pug_config.map_method == 'ban':
                 map_pick = await self.ban_maps(message, pug_config.mpool, team_one[0], team_two[0])
             elif pug_config.map_method == 'vote':
                 map_pick = await self.vote_maps(message, pug_config.mpool, users)
-            else: # map_method is random
+            else:  # map_method is random
                 map_pick = await self.random_map(pug_config.mpool)
         except asyncio.TimeoutError:
             title = translate('match-took-too-long')
@@ -200,8 +200,8 @@ class MatchCog(commands.Cog):
             'category': match_catg.id,
             'team1_channel': team1_channel.id,
             'team2_channel': team2_channel.id,
-            'team1_name' :team_one[0].display_name,
-            'team2_name' :team_two[0].display_name            
+            'team1_name': team_one[0].display_name,
+            'team2_name': team_two[0].display_name            
         }
 
         awaitables.append(self.bot.db.update_match(match_id, **match_data))

@@ -3,18 +3,12 @@
 from discord.ext import commands
 from discord.utils import get
 from steam.steamid import SteamID, from_url
-from datetime import datetime, timezone
 from iso3166 import countries
 import asyncio
 
 from .message import MapPoolMessage
-from .utils.utils import (translate,
-                         timedelta_str,
-                         unbantime,
-                         check_channel,
-                         check_pug,
-                         get_guild_config,
-                         get_user_config)
+from .utils.utils import (translate, timedelta_str, unbantime, check_channel,
+                          check_pug, get_guild_config, get_user_config)
 
 
 class CommandsCog(commands.Cog):
@@ -49,7 +43,7 @@ class CommandsCog(commands.Cog):
         if not is_user:
             msg = translate('command-setup-user-invalid')
             raise commands.UserInputError(message=msg)
-        
+
         msg = translate('command-setup-user-valid')
         embed = self.bot.embed_template(description=msg)
         await ctx.send(embed=embed)
@@ -76,23 +70,21 @@ class CommandsCog(commands.Cog):
         msg = translate('command-setup-key-valid')
         embed = self.bot.embed_template(description=msg)
         await ctx.send(embed=embed)
-        
+
         guild_config = await get_guild_config(self.bot, ctx.guild.id)
         linked_role = guild_config.linked_role
         afk_channel = guild_config.afk_channel
         commands_channel = guild_config.commands_channel
         g5_category = guild_config.g5_category
 
-        g5_category = await ctx.guild.create_category_channel(name='G5'
-                                                                ) if g5_category is None else g5_category
-
-        linked_role = await ctx.guild.create_role(name='Linked') if linked_role is None else linked_role
-
-        afk_channel = await ctx.guild.create_voice_channel(name='G5 AFK',
-                                category=g5_category) if afk_channel is None else afk_channel
-
-        commands_channel = await ctx.guild.create_text_channel(name='g5-commands',
-                                category= g5_category) if commands_channel is None else commands_channel
+        if not g5_category:
+            g5_category = await ctx.guild.create_category_channel(name='G5')
+        if not linked_role:
+            linked_role = await ctx.guild.create_role(name='Linked')
+        if not afk_channel:
+            afk_channel = await ctx.guild.create_voice_channel(name='G5 AFK', category=g5_category)
+        if not commands_channel:
+            commands_channel = await ctx.guild.create_text_channel(name='g5-commands', category= g5_category)
 
         guild_data = {
             'linked_role': linked_role.id,
@@ -206,7 +198,7 @@ class CommandsCog(commands.Cog):
     async def empty(self, ctx, lobby_id=None):
         """"""
         await check_channel(self.bot, ctx)
-        pug_config= await check_pug(self.bot, ctx, lobby_id)
+        pug_config = await check_pug(self.bot, ctx, lobby_id)
 
         guild_config = await get_guild_config(self.bot, ctx.guild.id)
         self.lobby_cog.block_lobby[pug_config.id] = True
@@ -223,8 +215,6 @@ class CommandsCog(commands.Cog):
         _embed = self.bot.embed_template(title=msg)
         await ctx.send(embed=_embed)
 
-        message = await self.lobby_cog.update_last_msg(pug_config, embed)
-
     @commands.command(usage='cap <voice lobby id> <new capacity>',
                       brief=translate('command-cap-brief'),
                       aliases=['capacity'])
@@ -232,7 +222,7 @@ class CommandsCog(commands.Cog):
     async def cap(self, ctx, lobby_id=None, cap=None):
         """"""
         await check_channel(self.bot, ctx)
-        pug_config= await check_pug(self.bot, ctx, lobby_id)
+        pug_config = await check_pug(self.bot, ctx, lobby_id)
 
         capacity = pug_config.capacity
 
@@ -270,7 +260,7 @@ class CommandsCog(commands.Cog):
         self.lobby_cog.block_lobby[pug_config.id] = False
 
         embed = self.bot.embed_template(title=msg)
-        message = await ctx.send(embed=embed)
+        await ctx.send(embed=embed)
 
     @commands.command(usage='teams <voice lobby id> <captains|random>',
                       brief=translate('command-teams-brief'),
@@ -279,7 +269,7 @@ class CommandsCog(commands.Cog):
     async def teams(self, ctx, lobby_id=None, method=None):
         """"""
         await check_channel(self.bot, ctx)
-        pug_config= await check_pug(self.bot, ctx, lobby_id)
+        pug_config = await check_pug(self.bot, ctx, lobby_id)
 
         team_method = pug_config.team_method
         valid_methods = ['autobalance', 'captains', 'random']
@@ -301,7 +291,7 @@ class CommandsCog(commands.Cog):
             await self.bot.db.update_pug(pug_config.id, team_method=method)
 
         embed = self.bot.embed_template(title=title)
-        message = await ctx.send(embed=embed)
+        await ctx.send(embed=embed)
 
     @commands.command(usage='captains <voice lobby id> <volunteer|random>',
                       brief=translate('command-captains-brief'),
@@ -310,7 +300,7 @@ class CommandsCog(commands.Cog):
     async def captains(self, ctx, lobby_id=None, method=None):
         """"""
         await check_channel(self.bot, ctx)
-        pug_config= await check_pug(self.bot, ctx, lobby_id)
+        pug_config = await check_pug(self.bot, ctx, lobby_id)
 
         captain_method = pug_config.captain_method
         valid_methods = ['volunteer', 'rank', 'random']
@@ -332,7 +322,7 @@ class CommandsCog(commands.Cog):
             await self.bot.db.update_pug(pug_config.id, captain_method=method)
 
         embed = self.bot.embed_template(title=title)
-        message = await ctx.send(embed=embed)
+        await ctx.send(embed=embed)
 
     @commands.command(usage='maps <voice lobby id> <ban|vote|random>',
                       brief=translate('command-maps-brief'),
@@ -341,7 +331,7 @@ class CommandsCog(commands.Cog):
     async def maps(self, ctx, lobby_id=None, method=None):
         """"""
         await check_channel(self.bot, ctx)
-        pug_config= await check_pug(self.bot, ctx, lobby_id)
+        pug_config = await check_pug(self.bot, ctx, lobby_id)
 
         map_method = pug_config.map_method
         valid_methods = ['ban', 'vote', 'random']
@@ -363,7 +353,7 @@ class CommandsCog(commands.Cog):
             await self.bot.db.update_pug(pug_config.id, map_method=method)
 
         embed = self.bot.embed_template(title=title)
-        message = await ctx.send(embed=embed)
+        await ctx.send(embed=embed)
 
     @commands.command(usage='mpool <voice lobby id>',
                       brief=translate('command-mpool-brief'),
@@ -372,7 +362,7 @@ class CommandsCog(commands.Cog):
     async def mpool(self, ctx, lobby_id=None):
         """"""
         await check_channel(self.bot, ctx)
-        pug_config= await check_pug(self.bot, ctx, lobby_id)
+        pug_config = await check_pug(self.bot, ctx, lobby_id)
         message = await ctx.send('Map Pool')
         menu = MapPoolMessage(message, self.bot, ctx.author, pug_config)
         await menu.pick()
@@ -383,7 +373,7 @@ class CommandsCog(commands.Cog):
     async def spectators(self, ctx, lobby_id=None, prefix=None):
         """"""
         await check_channel(self.bot, ctx)
-        pug_config= await check_pug(self.bot, ctx, lobby_id)
+        pug_config = await check_pug(self.bot, ctx, lobby_id)
 
         curr_spectator_ids = await self.bot.db.get_spect_users(pug_config.id)
         curr_spectators = [ctx.guild.get_member(spectator_id) for spectator_id in curr_spectator_ids]
@@ -426,7 +416,7 @@ class CommandsCog(commands.Cog):
                 title += f'{translate("ommand-spectators-removed", spectator.display_name)}\n'
 
         embed = self.bot.embed_template(title=title)
-        message = await ctx.send(embed=embed)
+        await ctx.send(embed=embed)
 
     @commands.command(usage='end <voice lobby id> <match id>',
                       brief=translate('command-end-brief'),
@@ -438,10 +428,11 @@ class CommandsCog(commands.Cog):
         if match_id is None:
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
-        
+
         try:
             await self.bot.api.cancel_match(match_id, guild_config.auth)
         except Exception as e:
+            print(e)
             msg = translate('command-end-invalid-id', match_id)
             raise commands.UserInputError(message=msg)
 
@@ -534,4 +525,4 @@ class CommandsCog(commands.Cog):
         if isinstance(error, commands.UserInputError):
             await ctx.trigger_typing()
             embed = self.bot.embed_template(description='**' + str(error) + '**', color=self.bot.colors['red'])
-            message = await ctx.send(embed=embed)
+            await ctx.send(embed=embed)

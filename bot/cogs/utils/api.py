@@ -34,6 +34,7 @@ class PlayerStats:
         self.average_rating = json_data['average_rating']
         self.wins = json_data['wins']
 
+
 def new_user(steam):
     """"""
     return {
@@ -71,7 +72,7 @@ class MatchServer:
         self.ip = server['ip_string']
         self.port = server['port']
         self.web_url = web_url
-    
+
     @property
     def connect_url(self):
         """ Format URL to connect to server. """
@@ -87,6 +88,7 @@ class MatchServer:
         """ Generate the matches G5API page link. """
         if self.web_url:
             return f'{self.web_url}/match/{self.id}'
+
 
 async def start_request_log(session, ctx, params):
     """"""
@@ -132,7 +134,7 @@ class ApiHelper:
 
     async def is_user(self, user_id):
         """"""
-        url =  f'{self.web_url}/api/users'
+        url = f'{self.web_url}/api/users'
 
         async with self.session.get(url=url) as resp:
             resp_data = await resp.json()
@@ -140,10 +142,10 @@ class ApiHelper:
 
     async def check_auth(self, auth):
         """"""
-        url =  f'{self.web_url}/api'
+        url = f'{self.web_url}/api'
         data = {
             'user_id': auth['user_id'],
-            'user_api': auth['api_key'],                
+            'user_api': auth['api_key'],
         }
 
         async with self.session.get(url=url, json=[data]) as resp:

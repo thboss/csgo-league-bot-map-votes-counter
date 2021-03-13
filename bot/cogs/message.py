@@ -92,7 +92,7 @@ class ReadyMessage(discord.Message):
             pass
 
         self.bot.remove_listener(self._process_ready, name='on_reaction_add')
-        
+
         return self.reactors
 
 
@@ -220,7 +220,6 @@ class TeamDraftMessage(discord.Message):
             await self.remove_reaction(reaction, user)
             return
 
-        
         if not self._pick_player(user, pick):
             await self.remove_reaction(reaction, user)
             return
@@ -273,7 +272,8 @@ class TeamDraftMessage(discord.Message):
                 captain = list(map(users_dict.get, player))
                 self.users_left.remove(captain[0])
                 team.append(captain[0])
-                self.captains_emojis.append(list(self.pick_emojis.keys())[list(self.pick_emojis.values()).index(captain[0])])
+                self.captains_emojis.append(list(self.pick_emojis.keys())
+                    [list(self.pick_emojis.values()).index(captain[0])])
         elif captain_method == 'random':
             temp_users = self.users_left.copy()
             shuffle(temp_users)
@@ -282,7 +282,8 @@ class TeamDraftMessage(discord.Message):
                 captain = temp_users.pop()
                 self.users_left.remove(captain)
                 team.append(captain)
-                self.captains_emojis.append(list(self.pick_emojis.keys())[list(self.pick_emojis.values()).index(captain)])
+                self.captains_emojis.append(list(self.pick_emojis.keys())
+                    [list(self.pick_emojis.values()).index(captain)])
         else: # captain_method is volunteer
             pass
 

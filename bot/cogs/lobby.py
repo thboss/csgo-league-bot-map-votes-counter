@@ -1,7 +1,7 @@
 # lobby.py
 
 from discord.ext import commands, tasks
-from discord.errors import NotFound, HTTPException
+from discord.errors import NotFound
 from discord.utils import get
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -98,7 +98,7 @@ class LobbyCog(commands.Cog):
                     spect_ids = results[2]
                     banned_users = results[3]
                     matches_users = results[4]
-                    
+
                     if not is_linked:
                         title = translate('lobby-user-not-linked', user.display_name)
                     elif user.id in banned_users:
@@ -149,17 +149,21 @@ class LobbyCog(commands.Cog):
                             if unreadied:
                                 description = ''.join(f':x: {user.mention}\n' for user in unreadied)
                                 title = translate('lobby-not-all-ready')
-                                burst_embed = self.bot.embed_template(title=title, description=description, color=self.bot.colors['red'])
+                                burst_embed = self.bot.embed_template(title=title, description=description,
+                                                                      color=self.bot.colors['red'])
                                 burst_embed.set_footer(text=translate('lobby-unready-footer'))
 
                                 awaitables = [
                                     ready_msg.clear_reactions(),
                                     ready_msg.edit(content='', embed=burst_embed),
-                                    self.bot.db.delete_queued_users(after_pug_config.id, *(user.id for user in unreadied))
+                                    self.bot.db.delete_queued_users(after_pug_config.id,
+                                                                    *(user.id for user in unreadied))
                                 ]
 
-                                for user in queued_users: awaitables.append(user.add_roles(linked_role))
-                                for user in unreadied: awaitables.append(user.move_to(afk_channel))
+                                for user in queued_users:
+                                    awaitables.append(user.add_roles(linked_role))
+                                for user in unreadied:
+                                    awaitables.append(user.move_to(afk_channel))
                                 await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
                             else:
                                 await ready_msg.clear_reactions()
@@ -196,7 +200,7 @@ class LobbyCog(commands.Cog):
                 there_banned_users = True
                 guild_unbanned_users = await self.bot.db.get_unbanned_users(guild.id)
                 unbanned_users[guild] = guild_unbanned_users
-                
+
                 for user_ids in unbanned_users[guild]:
                     users = [get(guild.members, id=user_id) for user_id in user_ids]
                     for user in users:
