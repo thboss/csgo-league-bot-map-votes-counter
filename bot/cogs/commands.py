@@ -4,6 +4,7 @@ from discord.ext import commands
 from discord.utils import get
 from steam.steamid import SteamID, from_url
 from iso3166 import countries
+import re
 import asyncio
 
 from .message import MapPoolMessage
@@ -119,20 +120,20 @@ class CommandsCog(commands.Cog):
         everyone_role = get(ctx.guild.roles, name='@everyone')
 
         awaitables = [
-            ctx.guild.create_text_channel(name=f'{args}-setup', category=g5_category),
+            ctx.guild.create_text_channel(name=f'{args}-queue', category=g5_category),
             ctx.guild.create_voice_channel(name=f'{args} Lobby', category=g5_category, user_limit=10),
             self.bot.db.insert_pugs(),
         ]
         results = await asyncio.gather(*awaitables, loop=self.bot.loop)
 
-        setup_channel = results[0]
+        queue_channel = results[0]
         lobby_channel = results[1]
 
         awaitables = [
             self.bot.db.update_pug(results[2][0], guild=ctx.guild.id,
-                                                    setup_channel=setup_channel.id,
+                                                    queue_channel=queue_channel.id,
                                                     lobby_channel=lobby_channel.id),
-            setup_channel.set_permissions(everyone_role, send_messages=False),
+            queue_channel.set_permissions(everyone_role, send_messages=False),
             lobby_channel.set_permissions(everyone_role, connect=False),
             lobby_channel.set_permissions(linked_role, connect=True)
         ]
@@ -143,7 +144,7 @@ class CommandsCog(commands.Cog):
         embed = self.bot.embed_template(title=msg, color=self.bot.colors['green'])
         await ctx.send(embed=embed)
 
-    @commands.command(usage='link <Steam ID/Profile> <flag>',
+    @commands.command(usage='link <Steam ID/Profile> <country_flag_code>',
                       brief=translate('command-link-brief'))
     async def link(self, ctx, *args):
         """"""
@@ -177,7 +178,7 @@ class CommandsCog(commands.Cog):
         await ctx.author.add_roles(guild_config.linked_role)
 
         title = translate('command-link-success', ctx.author.display_name, steam_id)
-        embed = self.bot.embed_template(description=title)
+        embed = self.bot.embed_template(description=title, color=self.bot.colors['green'])
         await ctx.send(embed=embed)
 
     @commands.command(brief=translate('command-unlink-brief'))
@@ -189,59 +190,74 @@ class CommandsCog(commands.Cog):
         await ctx.author.remove_roles(guild_config.linked_role)
 
         title = translate('command-unlink-success', ctx.author)
-        embed = self.bot.embed_template(title=title)
+        embed = self.bot.embed_template(title=title, color=self.bot.colors['green'])
         await ctx.send(embed=embed)
 
-    @commands.command(usage='empty <voice lobby id>',
+    @commands.command(usage='empty <mention_queue_channel>',
                       brief=translate('command-empty-brief'))
     @commands.has_permissions(kick_members=True)
-    async def empty(self, ctx, lobby_id=None):
+    async def empty(self, ctx):
         """"""
-        await check_channel(self.bot, ctx)
-        pug_config = await check_pug(self.bot, ctx, lobby_id)
+        try:
+            args = ctx.message.content.split()[1:]
+            queue_id = int(re.search('<#(.+?)>', args[0]).group(1))
+        except:
+            msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            raise commands.UserInputError(message=msg)
 
+        await check_channel(self.bot, ctx)
+        pug_config = await check_pug(self.bot, ctx, queue_id)
         guild_config = await get_guild_config(self.bot, ctx.guild.id)
-        self.lobby_cog.block_lobby[pug_config.id] = True
+        lobby_channel = pug_config.lobby_channel
+
+        if self.lobby_cog.locked_lobby[pug_config.id]:
+            msg = translate('command-empty-locked')
+            raise commands.UserInputError(message=msg)
+
+        self.lobby_cog.locked_lobby[pug_config.id] = True
         await self.bot.db.clear_queued_users(pug_config.id)
         msg = translate('command-empty-success')
         embed = await self.lobby_cog.queue_embed(pug_config, msg)
         await self.lobby_cog.update_last_msg(pug_config, embed)
 
-        lobby_channel = pug_config.lobby_channel
-
         for member in lobby_channel.members:
             await member.move_to(guild_config.afk_channel)
 
-        self.lobby_cog.block_lobby[pug_config.id] = False
-        _embed = self.bot.embed_template(title=msg)
+        self.lobby_cog.locked_lobby[pug_config.id] = False
+        _embed = self.bot.embed_template(title=msg, color=self.bot.colors['green'])
         await ctx.send(embed=_embed)
 
-    @commands.command(usage='cap <voice lobby id> <new capacity>',
+    @commands.command(usage='cap <mention_queue_channel> <new_capacity>',
                       brief=translate('command-cap-brief'),
                       aliases=['capacity'])
     @commands.has_permissions(kick_members=True)
-    async def cap(self, ctx, lobby_id=None, cap=None):
+    async def cap(self, ctx):
         """"""
-        await check_channel(self.bot, ctx)
-        pug_config = await check_pug(self.bot, ctx, lobby_id)
-
-        capacity = pug_config.capacity
-
         try:
-            new_cap = int(cap)
-        except (ValueError, TypeError):
+            args = ctx.message.content.split()[1:]
+            queue_id = int(re.search('<#(.+?)>', args[0]).group(1))
+            new_cap = int(args[1])
+        except:
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        if new_cap == capacity:
-            msg = translate('command-cap-already', capacity)
+        await check_channel(self.bot, ctx)
+        pug_config = await check_pug(self.bot, ctx, queue_id)
+        curr_cap = pug_config.capacity
+
+        if new_cap == curr_cap:
+            msg = translate('command-cap-already', curr_cap)
             raise commands.UserInputError(message=msg)
 
-        if new_cap < 2 or new_cap > 100:
+        if new_cap < 2 or new_cap > 100 or new_cap %2 == 1:
             msg = translate('command-cap-out-range')
             raise commands.UserInputError(message=msg)
 
-        self.lobby_cog.block_lobby[pug_config.id] = True
+        if self.lobby_cog.locked_lobby[pug_config.id]:
+            msg = translate('command-cap-locked')
+            raise commands.UserInputError(message=msg)
+
+        self.lobby_cog.locked_lobby[pug_config.id] = True
         await self.bot.db.clear_queued_users(pug_config.id)
         await self.bot.db.update_pug(pug_config.id, capacity=new_cap)
         embed = await self.lobby_cog.queue_embed(pug_config, translate('command-empty-success'))
@@ -258,30 +274,35 @@ class CommandsCog(commands.Cog):
         awaitables.append(lobby_channel.edit(user_limit=new_cap))
         await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
 
-        self.lobby_cog.block_lobby[pug_config.id] = False
+        self.lobby_cog.locked_lobby[pug_config.id] = False
 
         embed = self.bot.embed_template(title=msg)
         await ctx.send(embed=embed)
 
-    @commands.command(usage='teams <voice lobby id> <captains|random>',
+    @commands.command(usage='teams <mention_queue_channel> <captains|autobalance|random>',
                       brief=translate('command-teams-brief'),
                       aliases=['team'])
     @commands.has_permissions(kick_members=True)
-    async def teams(self, ctx, lobby_id=None, method=None):
+    async def teams(self, ctx):
         """"""
-        await check_channel(self.bot, ctx)
-        pug_config = await check_pug(self.bot, ctx, lobby_id)
+        try:
+            args = ctx.message.content.split()[1:]
+            queue_id = int(re.search('<#(.+?)>', args[0]).group(1))
+            method = args[1].lower() if len(args) > 1 else None
+        except:
+            msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            raise commands.UserInputError(message=msg)
 
-        team_method = pug_config.team_method
+        await check_channel(self.bot, ctx)
+        pug_config = await check_pug(self.bot, ctx, queue_id)
+        curr_method = pug_config.team_method
         valid_methods = ['autobalance', 'captains', 'random']
 
         if method is None:
-            title = translate('command-teams-method', team_method)
+            title = translate('command-teams-method', curr_method)
         else:
-            method = method.lower()
-
-            if method == team_method:
-                msg = translate('command-teams-already', team_method)
+            if method == curr_method:
+                msg = translate('command-teams-already', curr_method)
                 raise commands.UserInputError(message=msg)
 
             if method not in valid_methods:
@@ -294,88 +315,112 @@ class CommandsCog(commands.Cog):
         embed = self.bot.embed_template(title=title)
         await ctx.send(embed=embed)
 
-    @commands.command(usage='captains <voice lobby id> <volunteer|random>',
+    @commands.command(usage='captains <mention_queue_channel> <volunteer|rank|random>',
                       brief=translate('command-captains-brief'),
                       aliases=['captain', 'picker', 'pickers'])
     @commands.has_permissions(kick_members=True)
-    async def captains(self, ctx, lobby_id=None, method=None):
+    async def captains(self, ctx):
         """"""
-        await check_channel(self.bot, ctx)
-        pug_config = await check_pug(self.bot, ctx, lobby_id)
+        try:
+            args = ctx.message.content.split()[1:]
+            queue_id = int(re.search('<#(.+?)>', args[0]).group(1))
+            new_method = args[1].lower() if len(args) > 1 else None
+        except:
+            msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            raise commands.UserInputError(message=msg)
 
-        captain_method = pug_config.captain_method
+        await check_channel(self.bot, ctx)
+        pug_config = await check_pug(self.bot, ctx, queue_id)
+        curr_method = pug_config.captain_method
         valid_methods = ['volunteer', 'rank', 'random']
 
-        if method is None:
-            title = translate('command-captains-method', captain_method)
+        if new_method is None:
+            title = translate('command-captains-method', curr_method)
         else:
-            method = method.lower()
-
-            if method == captain_method:
-                msg = translate('command-captains-already', captain_method)
+            if new_method == curr_method:
+                msg = translate('command-captains-already', curr_method)
                 raise commands.UserInputError(message=msg)
 
-            if method not in valid_methods:
+            if new_method not in valid_methods:
                 msg = translate('command-captains-invalid', valid_methods[0], valid_methods[1])
                 raise commands.UserInputError(message=msg)
 
-            title = translate('command-captains-changed', method)
-            await self.bot.db.update_pug(pug_config.id, captain_method=method)
+            title = translate('command-captains-changed', new_method)
+            await self.bot.db.update_pug(pug_config.id, captain_method=new_method)
 
         embed = self.bot.embed_template(title=title)
         await ctx.send(embed=embed)
 
-    @commands.command(usage='maps <voice lobby id> <ban|vote|random>',
+    @commands.command(usage='maps <mention_queue_channel> <ban|vote|random>',
                       brief=translate('command-maps-brief'),
                       aliases=['map'])
     @commands.has_permissions(kick_members=True)
-    async def maps(self, ctx, lobby_id=None, method=None):
+    async def maps(self, ctx):
         """"""
-        await check_channel(self.bot, ctx)
-        pug_config = await check_pug(self.bot, ctx, lobby_id)
+        try:
+            args = ctx.message.content.split()[1:]
+            queue_id = int(re.search('<#(.+?)>', args[0]).group(1))
+            new_method = args[1].lower() if len(args) > 1 else None
+        except:
+            msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            raise commands.UserInputError(message=msg)
 
-        map_method = pug_config.map_method
+        await check_channel(self.bot, ctx)
+        pug_config = await check_pug(self.bot, ctx, queue_id)
+        curr_method = pug_config.map_method
         valid_methods = ['ban', 'vote', 'random']
 
-        if method is None:
-            title = translate('command-maps-method', map_method)
+        if new_method is None:
+            title = translate('command-maps-method', curr_method)
         else:
-            method = method.lower()
-
-            if method == map_method:
-                msg = translate('command-maps-already', map_method)
+            if new_method == curr_method:
+                msg = translate('command-maps-already', curr_method)
                 raise commands.UserInputError(message=msg)
 
-            if method not in valid_methods:
+            if new_method not in valid_methods:
                 msg = translate('command-maps-invalid', valid_methods[0], valid_methods[1], valid_methods[2])
                 raise commands.UserInputError(message=msg)
 
-            title = translate('command-maps-changed', method)
-            await self.bot.db.update_pug(pug_config.id, map_method=method)
+            title = translate('command-maps-changed', new_method)
+            await self.bot.db.update_pug(pug_config.id, map_method=new_method)
 
         embed = self.bot.embed_template(title=title)
         await ctx.send(embed=embed)
 
-    @commands.command(usage='mpool <voice lobby id>',
+    @commands.command(usage='mpool <mention_queue_channel>',
                       brief=translate('command-mpool-brief'),
                       aliases=['mappool', 'pool'])
     @commands.has_permissions(kick_members=True)
-    async def mpool(self, ctx, lobby_id=None):
+    async def mpool(self, ctx):
         """"""
+        try:
+            args = ctx.message.content.split()[1:]
+            queue_id = int(re.search('<#(.+?)>', args[0]).group(1))
+        except:
+            msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            raise commands.UserInputError(message=msg)
+
         await check_channel(self.bot, ctx)
-        pug_config = await check_pug(self.bot, ctx, lobby_id)
+        pug_config = await check_pug(self.bot, ctx, queue_id)
         message = await ctx.send('Map Pool')
         menu = MapPoolMessage(message, self.bot, ctx.author, pug_config)
         await menu.pick()
 
-    @commands.command(usage='spectators <voice lobby id> {+|-} <mention> <mention> ...',
+    @commands.command(usage='spectators <mention_queue_channel> {+|-} <mention> <mention> ...',
                       brief=translate('command-spectators-brief'),
                       aliases=['spec', 'spectator'])
-    async def spectators(self, ctx, lobby_id=None, prefix=None):
+    async def spectators(self, ctx):
         """"""
-        await check_channel(self.bot, ctx)
-        pug_config = await check_pug(self.bot, ctx, lobby_id)
+        try:
+            args = ctx.message.content.split()[1:]
+            queue_id = int(re.search('<#(.+?)>', args[0]).group(1))
+            prefix = args[1] if len(args) > 1 else None
+        except:
+            msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            raise commands.UserInputError(message=msg)
 
+        await check_channel(self.bot, ctx)
+        pug_config = await check_pug(self.bot, ctx, queue_id)
         curr_spectator_ids = await self.bot.db.get_spect_users(pug_config.id)
         curr_spectators = [ctx.guild.get_member(spectator_id) for spectator_id in curr_spectator_ids]
         spectators = ctx.message.mentions
@@ -422,7 +467,7 @@ class CommandsCog(commands.Cog):
         embed = self.bot.embed_template(title=title)
         await ctx.send(embed=embed)
 
-    @commands.command(usage='end <voice lobby id> <match id>',
+    @commands.command(usage='end <match_id>',
                       brief=translate('command-end-brief'),
                       aliases=['cancel', 'stop'])
     @commands.has_permissions(kick_members=True)
@@ -435,8 +480,7 @@ class CommandsCog(commands.Cog):
 
         try:
             await self.bot.api.cancel_match(match_id, guild_config.auth)
-        except Exception as e:
-            print(e)
+        except:
             msg = translate('command-end-invalid-id', match_id)
             raise commands.UserInputError(message=msg)
 
@@ -501,8 +545,7 @@ class CommandsCog(commands.Cog):
         await ctx.send(embed=embed)
 
         for user in ctx.message.mentions:
-            if await self.bot.api.is_linked(user.id):
-                await user.add_roles(guild_config.linked_role)
+            await user.add_roles(guild_config.linked_role)
 
     @setup.error
     @lobby.error

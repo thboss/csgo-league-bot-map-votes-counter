@@ -133,14 +133,14 @@ class PUGsBot(commands.AutoShardedBot):
                 pass
         elif isinstance(channel, discord.TextChannel):
             try:
-                pug_data = await self.db.get_pug(channel.id, column='setup_channel')
+                pug_data = await self.db.get_pug(channel.id, column='queue_channel')
             except AttributeError:
                 pass
 
         if pug_data is not None and channel.id in pug_data.values():
             self.block_on_channel_delete = True
             try:
-                await channel.guild.get_channel(pug_data['setup_channel']).delete()
+                await channel.guild.get_channel(pug_data['queue_channel']).delete()
             except (AttributeError, discord.errors.NotFound):
                 pass
             try:

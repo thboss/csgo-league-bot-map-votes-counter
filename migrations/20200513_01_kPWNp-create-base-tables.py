@@ -32,7 +32,7 @@ steps = [
             'CREATE TABLE pugs(\n'
             '    id SMALLSERIAL PRIMARY KEY,\n'
             '    guild BIGINT DEFAULT NULL REFERENCES guilds (id) ON DELETE CASCADE,\n'
-            '    setup_channel BIGINT DEFAULT NULL,\n'
+            '    queue_channel BIGINT DEFAULT NULL,\n'
             '    lobby_channel BIGINT DEFAULT NULL,\n'
             '    capacity SMALLINT DEFAULT 10,\n'
             '    team_method team_method DEFAULT \'captains\',\n'
