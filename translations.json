@@ -31,24 +31,26 @@
         "command-check-success":        "**You are linked to [Steam account](https://steamcommunity.com/profiles/{})** ✅",
 
         "command-empty-brief":          "Empty the lobby (must have server kick perms)",
+        "command-empty-locked":         "Sorry! You cannot empty this lobby while setting up a match",
         "command-empty-success":        "The lobby has been emptied",
 
         "command-cap-brief":            "Set the capacity of the lobby (Must have server kick perms)",
         "command-cap-already":          "Lobby capacity is already set to {}",
-        "command-cap-out-range":        "Lobby capacity is outside of valid range (2-100)",
+        "command-cap-out-range":        "Lobby capacity is must be an even number and in range (2-100)",
+        "command-cap-locked":           "Sorry! You cannot change the lobby's capacity while setting up a match",
         "command-cap-footer":           "The lobby has been emptied because of the capacity change",
         "command-cap-success":          "Lobby capacity set to **{}** ✅",
 
         "command-teams-brief":          "Set the team creation method (Must have server kick perms)",
         "command-teams-method":         "The current team creation method is {}",
         "command-teams-already":        "The current team creation method is already set to {}",
-        "command-teams-invalid":        "The team creation method must be {} or {}",
+        "command-teams-invalid":        "The team creation method must be {}, {} or {}",
         "command-teams-changed":        "Team creation method set to **{}** ✅",
 
         "command-captains-brief":       "Set the captain selection method (Must have server kick perms)",
         "command-captains-method":      "The current captain selection method is {}",
         "command-captains-already":     "The current captain selection method is already set to {}",
-        "command-captains-invalid":     "Captain selection method must be {} or {}",
+        "command-captains-invalid":     "Captain selection method must be {}, {} or {}",
         "command-captains-changed":     "Captain selection method set to **{}** ✅",
 
         "command-maps-brief":           "Set the map selection method (must have server kick perms)",
@@ -66,8 +68,8 @@
         "ommand-spectators-removed":    "Removed **{}** from the spectators ✅",
 
         "command-end-brief":            "Cancel a live match (must have kick members perms)",
-        "command-end-invalid-id":       "Match ID **{}** isn't exists or the match is already finished",
-        "command-end-canceled":        "Match ID **{}** just canceled ✅",
+        "command-end-invalid-id":       "Match ID {} is invalid or already finished",
+        "command-end-canceled":         "Match ID **{}** just canceled ✅",
 
         "command-ban-brief":            "Ban all mentioned users from joining the lobbies (Must have ban members perms)",
         "command-ban-mention-to-ban":   "Mention a user in the command to ban them",
@@ -78,7 +80,8 @@
         "command-unban-footer":         "Unbanned users may now join the lobbies",
         "command-required-perm":        "Sorry! You are missing **{}** permission to use this command!",
         "command-missing-channel":      "Sorry! This commands is only allowed in {}",
-        "command-missing-lobby-id":     "Sorry! The input lobby ID is invalid!",
+        "command-channel-not-fount":    "Sorry! The commands channel didn't find, Please do `g!setup`",
+        "command-missing-mention-channel":"Sorry! Please mention a queue channel",
 
         "help-brief":                   "Display the help menu",
         "help-not-valid":               "command `{}` is not valid! ",

@@ -100,22 +100,25 @@ async def check_channel(bot, ctx):
     """"""
     guild_config = await get_guild_config(bot, ctx.guild.id)
     commands_channel = guild_config.commands_channel
-    if ctx.channel != commands_channel:
+    if not commands_channel:
+        msg = translate('command-channel-not-fount')
+        raise commands.UserInputError(message=msg)
+    elif ctx.channel != commands_channel:
         msg = translate('command-missing-channel', guild_config.commands_channel.mention)
         raise commands.UserInputError(message=msg)
     return guild_config
 
 
-async def check_pug(bot, ctx, lobby_id):
+async def check_pug(bot, ctx, queue_id):
     """"""
     try:
-        pug_config = await get_pug_config(bot, int(lobby_id), 'lobby_channel')
+        pug_config = await get_pug_config(bot, queue_id, 'queue_channel')
     except TypeError:
         msg = translate('invalid-usage', bot.command_prefix[0], ctx.command.usage)
         raise commands.UserInputError(message=msg)
 
     if pug_config is None or ctx.guild != pug_config.guild:
-        msg = translate('command-missing-lobby-id')
+        msg = translate('command-missing-mention-channel')
         raise commands.UserInputError(message=msg)
 
     return pug_config
@@ -149,11 +152,11 @@ class GuildConfig:
 
 class PUGConfig:
     """"""
-    def __init__(self, id, guild, setup_channel, lobby_channel, capacity,
+    def __init__(self, id, guild, queue_channel, lobby_channel, capacity,
                  team_method, captain_method, map_method, mpool):
         self.id = id
         self.guild = guild
-        self.setup_channel = setup_channel
+        self.queue_channel = queue_channel
         self.lobby_channel = lobby_channel
         self.capacity = capacity
         self.team_method = team_method
@@ -167,7 +170,7 @@ class PUGConfig:
         guild = bot.get_guild(pug_data['guild'])
         return cls(pug_data['id'],
                    guild,
-                   guild.get_channel(pug_data['setup_channel']),
+                   guild.get_channel(pug_data['queue_channel']),
                    guild.get_channel(pug_data['lobby_channel']),
                    pug_data['capacity'],
                    pug_data['team_method'],
@@ -204,7 +207,7 @@ class MatchConfig:
         return cls(match_data['id'],
                    guild_config,
                    pug_config,
-                   await pug_config.setup_channel.fetch_message(match_data['message']),
+                   await pug_config.queue_channel.fetch_message(match_data['message']),
                    guild.get_channel(match_data['category']),
                    guild.get_channel(match_data['team1_channel']),
                    guild.get_channel(match_data['team2_channel']),

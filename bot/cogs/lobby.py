@@ -17,8 +17,8 @@ class LobbyCog(commands.Cog):
         """"""
         self.bot = bot
         self.last_queue_msgs = {}
-        self.block_lobby = {}
-        self.block_lobby = defaultdict(lambda: False, self.block_lobby)
+        self.locked_lobby = {}
+        self.locked_lobby = defaultdict(lambda: False, self.locked_lobby)
 
     async def queue_embed(self, pug_config, title=None, queued_ids=None):
         """"""
@@ -46,7 +46,7 @@ class LobbyCog(commands.Cog):
         try:
             await msg.edit(embed=embed)
         except (AttributeError, NotFound):
-            self.last_queue_msgs[pug_config.id] = await pug_config.setup_channel.send(embed=embed)
+            self.last_queue_msgs[pug_config.id] = await pug_config.queue_channel.send(embed=embed)
 
     async def check_ready(self, message, users, guild_config):
         """"""
@@ -63,7 +63,7 @@ class LobbyCog(commands.Cog):
         if before.channel is not None:
             before_pug_config = await get_pug_config(self.bot, before.channel.id, 'lobby_channel')
             if before_pug_config is not None and before.channel == before_pug_config.lobby_channel:
-                if not self.block_lobby[before_pug_config.id]:
+                if not self.locked_lobby[before_pug_config.id]:
                     removed = await self.bot.db.delete_queued_users(before_pug_config.id, user.id)
 
                     if user.id in removed:
@@ -77,7 +77,7 @@ class LobbyCog(commands.Cog):
         if after.channel is not None:
             after_pug_config = await get_pug_config(self.bot, after.channel.id, 'lobby_channel')
             if after_pug_config is not None and after.channel == after_pug_config.lobby_channel:
-                if not self.block_lobby[after_pug_config.id]:
+                if not self.locked_lobby[after_pug_config.id]:
                     awaitables = []
                     for pug_id in await self.bot.db.get_guild_pugs(after.channel.guild.id):
                         if pug_id != after_pug_config.id:
@@ -122,13 +122,13 @@ class LobbyCog(commands.Cog):
                         title = translate('lobby-user-added', user.display_name)
 
                         if len(queued_ids) == after_pug_config.capacity:
-                            self.block_lobby[after_pug_config.id] = True
+                            self.locked_lobby[after_pug_config.id] = True
 
                             match_cog = self.bot.get_cog('MatchCog')
                             guild_config = await get_guild_config(self.bot, after.channel.guild.id)
                             linked_role = guild_config.linked_role
                             afk_channel = guild_config.afk_channel
-                            setup_channel = after_pug_config.setup_channel
+                            queue_channel = after_pug_config.queue_channel
                             queued_users = [user.guild.get_member(user_id) for user_id in queued_ids]
 
                             await after.channel.set_permissions(linked_role, connect=False)
@@ -141,7 +141,7 @@ class LobbyCog(commands.Cog):
                                     pass
                                 self.last_queue_msgs.pop(after_pug_config.id)
 
-                            ready_msg = await setup_channel.send(''.join([user.mention for user in queued_users]))
+                            ready_msg = await queue_channel.send(''.join([user.mention for user in queued_users]))
                             ready_users = await self.check_ready(ready_msg, queued_users, guild_config)
                             await asyncio.sleep(1)
                             unreadied = set(queued_users) - ready_users
@@ -183,7 +183,7 @@ class LobbyCog(commands.Cog):
                             embed = await self.queue_embed(after_pug_config, title)
                             await self.update_last_msg(after_pug_config, embed)
 
-                            self.block_lobby[after_pug_config.id] = False
+                            self.locked_lobby[after_pug_config.id] = False
                             await after_pug_config.lobby_channel.set_permissions(linked_role, connect=True)
                             return
 
