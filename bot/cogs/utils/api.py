@@ -175,14 +175,6 @@ class ApiHelper:
             resp_data = await resp.json()
             return resp_data['id']
 
-    async def public_servers(self):
-        """"""
-        url = f'{self.web_url}/api/servers/available'
-
-        async with self.session.get(url=url) as resp:
-            resp_data = await resp.json()
-            return resp_data['servers']
-
     async def private_servers(self, auth):
         """"""
         url = f'{self.web_url}/api/servers/myservers'
