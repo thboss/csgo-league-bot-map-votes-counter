@@ -12,6 +12,7 @@ class PlayerStats:
     def __init__(self, json_data, web_url=None):
         """"""
         self.steam = json_data['steamId']
+        self.discord = json_data['discord']
         self.name = json_data['name']
         self.kills = json_data['kills']
         self.deaths = json_data['deaths']
@@ -30,16 +31,20 @@ class PlayerStats:
         self.fba = json_data['fba']
         self.total_damage = json_data['total_damage']
         self.hsk = json_data['hsk']
-        self.hsp = json_data['hsp']
+        self.hsp = f"{json_data['hsp']:.2f}%"
         self.average_rating = json_data['average_rating']
         self.wins = json_data['wins']
+        self.total_maps = json_data['total_maps']
+        self.win_percent = f'{self.wins / self.total_maps * 100:.2f}%' if self.total_maps else '0.00%'
+        self.kdr = f'{self.kills / self.deaths:.2f}%' if self.deaths else '0.00%'
+        self.profile = f'{web_url}/user/{self.steam}'
 
 
-def new_user(steam):
+def new_player(steam):
     """"""
     return {
         'steamId': steam,
-        'name': '',
+        'name': 'Unknown',
         'kills': 0,
         'deaths': 0,
         'assists': 0,
@@ -59,7 +64,8 @@ def new_user(steam):
         'hsk': 0,
         'hsp': 0,
         'average_rating': 0,
-        'wins': 0
+        'wins': 0,
+        'total_maps': 0
     }
 
 
@@ -155,7 +161,7 @@ class ApiHelper:
         """"""
         auths = await self.bot.db.get_users([user.id for user in users])
         auth_names = {
-            auths[index][0]: {
+            auths[index][1]: {
                 'name': user.display_name,
                 'captain': int(users.index(user) == 0)
             } for index, user in enumerate(users)
@@ -174,14 +180,6 @@ class ApiHelper:
         async with self.session.post(url=url, json=[data]) as resp:
             resp_data = await resp.json()
             return resp_data['id']
-
-    async def public_servers(self):
-        """"""
-        url = f'{self.web_url}/api/servers/available'
-
-        async with self.session.get(url=url) as resp:
-            resp_data = await resp.json()
-            return resp_data['servers']
 
     async def private_servers(self, auth):
         """"""
@@ -257,8 +255,8 @@ class ApiHelper:
         }
 
         if spectators:
-            spec_steams = await self.bot.db.get_users(spectators)
-            data['spectator_auths'] = {spec_steams[index]: spec.desplay_name for index, spec in enumerate(spectators)}
+            spects_data = await self.bot.db.get_users([user.id for user in spectators])
+            data['spectator_auths'] = {spects_data[index][1]: spec.desplay_name for index, spec in enumerate(spectators)}
 
         async with self.session.post(url=url, json=[data]) as resp:
             return MatchServer(await resp.json(), match_server, self.web_url)
@@ -275,16 +273,22 @@ class ApiHelper:
         async with self.session.get(url=url, json=[data]) as resp:
             return resp.status == 200
 
-    async def get_players_stats(self, users):
+    async def players_stats(self, users):
         """"""
         url = f'{self.web_url}/api/leaderboard/players/pug'
-        steam_ids = [steam[0] for steam in await self.bot.db.get_users([user.id for user in users])]
+        users_data = await self.bot.db.get_users([user.id for user in users])
+        users_dict = dict(zip([data[1] for data in users_data], [data[0] for data in users_data]))
 
         async with self.session.get(url=url) as resp:
             resp_data = await resp.json()
-            players = list(filter(lambda x: x['steamId'] in steam_ids, resp_data['leaderboard']))
-            for steam_id in steam_ids:
+            players = list(filter(lambda x: x['steamId'] in list(users_dict.keys()), resp_data['leaderboard']))
+
+            for steam_id in list(users_dict.keys()):
                 if steam_id not in [p['steamId'] for p in players]:
-                    players.append(new_user(steam_id))
-            players.sort(key=lambda x: steam_ids.index(x['steamId']))
+                    players.append(new_player(steam_id))
+
+            for player in players:
+                player['discord'] = list(map(users_dict.get, [player['steamId']]))[0]
+
+            players.sort(key=lambda x: list(users_dict.keys()).index(x['steamId']))
             return [PlayerStats(player, self.web_url) for player in players]

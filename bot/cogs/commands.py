@@ -9,7 +9,7 @@ import asyncio
 
 from .message import MapPoolMessage
 from .utils.utils import (translate, timedelta_str, unbantime, check_channel,
-                          check_pug, get_guild_config, get_user_config)
+                          check_pug, get_guild_config, get_user_config, align_text)
 
 
 class CommandsCog(commands.Cog):
@@ -487,6 +487,63 @@ class CommandsCog(commands.Cog):
         title = translate('command-end-canceled', match_id)
 
         embed = self.bot.embed_template(title=title)
+        await ctx.send(embed=embed)
+
+    @commands.command(brief=translate('command-stats-brief'),
+                      aliases=['rank'])
+    async def stats(self, ctx):
+        """"""
+        guild_config = await check_channel(self.bot, ctx)
+        user = ctx.author
+        player = await self.bot.api.players_stats([user])
+        player_stats = dict(player[0].__dict__)
+        player_stats.pop('steam')
+        player_stats.pop('discord')
+        embed = self.bot.embed_template()
+
+        for attr in list(player_stats):
+            state = attr.capitalize().replace('_', ' ')
+            if len(state) < 4:
+                state = state.upper()
+            player_stats[state] = player_stats.pop(attr)
+            embed.add_field(name=state, value=player_stats[state])
+
+        embed.set_author(name=user.display_name, url=player[0].profile, icon_url=user.avatar_url_as(size=128))
+        await ctx.send(embed=embed)
+
+    @commands.command(brief=translate('command-leaders-brief'),
+                      aliases=['top', 'ranks'])
+    async def leaders(self, ctx):
+        """"""
+        await check_channel(self.bot, ctx)
+
+        num = 10
+        guild_players = await self.bot.api.players_stats(ctx.guild.members)
+        guild_players.sort(key=lambda u: (u.average_rating), reverse=True)
+        guild_players = guild_players[:num]
+
+        # Generate leaderboard text
+        data = [['Player'] + [ctx.guild.get_member(player.discord).display_name for player in guild_players],
+                ['Rating'] + [str(player.average_rating) for player in guild_players],
+                ['Winrate'] + [player.win_percent for player in guild_players],
+                ['Played'] + [str(player.total_maps) for player in guild_players]]
+        data[0] = [name if len(name) < 12 else name[:9] + '...' for name in data[0]]  # Shorten long names
+        widths = list(map(lambda x: len(max(x, key=len)), data))
+        aligns = ['left', 'right', 'right', 'right']
+        z = zip(data, widths, aligns)
+        formatted_data = [list(map(lambda x: align_text(x, width, align), col)) for col, width, align in z]
+        formatted_data = list(map(list, zip(*formatted_data)))  # Transpose list for .format() string
+
+        description = '```ml\n    {}  {}  {}  {} \n'.format(*formatted_data[0])
+
+        for rank, player_row in enumerate(formatted_data[1:], start=1):
+            description += ' {}. {}  {}  {}  {} \n'.format(rank, *player_row)
+
+        description += '```'
+
+        # Send leaderboard
+        title = f'__{translate("command-leaders-leaderboard")}__'
+        embed = self.bot.embed_template(title=title, description=description)
         await ctx.send(embed=embed)
 
     @commands.command(usage='ban <user mention> ... [<days>d] [<hours>h] [<minutes>m]',
