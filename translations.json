@@ -71,6 +71,10 @@
         "command-end-invalid-id":       "Match ID {} is invalid or already finished",
         "command-end-canceled":         "Match ID **{}** just canceled ✅",
 
+        "command-stats-brief":          "Display your stats in the server",
+        "command-leaders-brief":        "Display server leaderboard",
+        "command-leaders-leaderboard":  "G5 PUGs Leaderboard",
+
         "command-ban-brief":            "Ban all mentioned users from joining the lobbies (Must have ban members perms)",
         "command-ban-mention-to-ban":   "Mention a user in the command to ban them",
         "command-ban-footer":           "Banned users have been removed from the lobbies",

@@ -160,7 +160,9 @@ class DBHelper:
             async with connection.transaction():
                 user = await connection.fetch(statement, user_ids)
 
-        return list(zip(self._get_record_attrs(user, 'steam_id'), self._get_record_attrs(user, 'flag')))
+        return list(zip(self._get_record_attrs(user, 'discord_id'),
+                        self._get_record_attrs(user, 'steam_id'),
+                        self._get_record_attrs(user, 'flag')))
 
     async def insert_users(self, discord_id, steam_id, flag):
         """ Insert multiple users into the users table. """

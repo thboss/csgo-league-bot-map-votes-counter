@@ -22,7 +22,7 @@ class MatchCog(commands.Cog):
     async def autobalance_teams(self, users):
         """ Balance teams based on players' avarage raitng. """
         # Get players and sort by average rating
-        users_dict = dict(zip(await self.bot.api.get_players_stats(users), users))
+        users_dict = dict(zip(await self.bot.api.players_stats(users), users))
         players = list(users_dict.keys())
         players.sort(key=lambda x: x.average_rating)
 
