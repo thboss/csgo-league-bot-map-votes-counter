@@ -19,10 +19,7 @@ steps = [
             '    id BIGSERIAL PRIMARY KEY,\n'
             '    user_id SMALLINT DEFAULT NULL,\n'
             '    api_key VARCHAR(65) DEFAULT NULL,\n'
-            '    linked_role BIGINT DEFAULT NULL,\n'
-            '    g5_category BIGINT DEFAULT NULL,\n'
-            '    commands_channel BIGINT DEFAULT NULL,\n'
-            '    afk_channel BIGINT DEFAULT NULL\n'
+            '    linked_role BIGINT DEFAULT NULL\n'
             ');'
         ),
         'DROP TABLE guilds;'

@@ -84,7 +84,7 @@
         "command-unban-footer":         "Unbanned users may now join the lobbies",
         "command-required-perm":        "Sorry! You are missing **{}** permission to use this command!",
         "command-missing-channel":      "Sorry! This commands is only allowed in {}",
-        "command-channel-not-fount":    "Sorry! The commands channel didn't find, Please do `g!setup`",
+        "command-not-setup":            "Sorry! Please do `g!setup` in order to use this command",
         "command-missing-mention-channel":"Sorry! Please mention a queue channel",
 
         "help-brief":                   "Display the help menu",

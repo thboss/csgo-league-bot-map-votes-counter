@@ -119,16 +119,13 @@ async def create_emojis(bot, guild):
                                               f'{url_path}{icon.replace(" ", "%20")}')
 
 
-async def check_channel(bot, ctx):
+async def check_setup(bot, ctx):
     """"""
     guild_config = await get_guild_config(bot, ctx.guild.id)
-    commands_channel = guild_config.commands_channel
-    if not commands_channel:
-        msg = translate('command-channel-not-fount')
+    if not any(guild_config.auth.values()) or not guild_config.linked_role:
+        msg = translate('command-not-setup')
         raise commands.UserInputError(message=msg)
-    elif ctx.channel != commands_channel:
-        msg = translate('command-missing-channel', guild_config.commands_channel.mention)
-        raise commands.UserInputError(message=msg)
+
     return guild_config
 
 
@@ -149,13 +146,11 @@ async def check_pug(bot, ctx, queue_id):
 
 class GuildConfig:
     """"""
-    def __init__(self, guild, auth, linked_role, g5_category, afk_channel, commands_channel):
+    def __init__(self, guild, auth, linked_role, afk_channel):
         self.guild = guild
         self.auth = auth
         self.linked_role = linked_role
-        self.g5_category = g5_category
         self.afk_channel = afk_channel
-        self.commands_channel = commands_channel
 
     @classmethod
     def from_dict(cls, bot, guild_data: dict):
@@ -168,9 +163,7 @@ class GuildConfig:
         return cls(guild,
                    auth,
                    guild.get_role(guild_data['linked_role']),
-                   guild.get_channel(guild_data['g5_category']),
-                   guild.get_channel(guild_data['afk_channel']),
-                   guild.get_channel(guild_data['commands_channel']))
+                   guild.afk_channel)
 
 
 class PUGConfig:
