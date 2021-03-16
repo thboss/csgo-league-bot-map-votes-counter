@@ -172,7 +172,7 @@ class ApiHelper:
             'user_id': auth['user_id'],
             'user_api': auth['api_key'],
             'name': users[0].display_name,
-            'flag': auths[0][1],
+            'flag': auths[0][2],
             'public_team': 0,
             'auth_name': auth_names
         }
