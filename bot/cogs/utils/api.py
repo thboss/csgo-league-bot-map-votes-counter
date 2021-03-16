@@ -31,12 +31,12 @@ class PlayerStats:
         self.fba = json_data['fba']
         self.total_damage = json_data['total_damage']
         self.hsk = json_data['hsk']
-        self.hsp = f"{json_data['hsp']:.2f}%"
-        self.average_rating = json_data['average_rating']
+        self.hsp = json_data['hsp'] + '%'
+        self.average_rating = float(json_data['average_rating'])
         self.wins = json_data['wins']
         self.total_maps = json_data['total_maps']
         self.win_percent = f'{self.wins / self.total_maps * 100:.2f}%' if self.total_maps else '0.00%'
-        self.kdr = f'{self.kills / self.deaths:.2f}%' if self.deaths else '0.00%'
+        self.kdr = f'{self.kills / self.deaths:.2f}' if self.deaths else '0.00'
         self.profile = f'{web_url}/user/{self.steam}'
 
 
@@ -62,8 +62,8 @@ def new_player(steam):
         'fba': 0,
         'total_damage': 0,
         'hsk': 0,
-        'hsp': 0,
-        'average_rating': 0,
+        'hsp': '0.00',
+        'average_rating': '0.00',
         'wins': 0,
         'total_maps': 0
     }
