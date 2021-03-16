@@ -8,7 +8,7 @@ import re
 import asyncio
 
 from .message import MapPoolMessage
-from .utils.utils import (translate, timedelta_str, unbantime, check_channel,
+from .utils.utils import (translate, timedelta_str, unbantime, check_setup,
                           check_pug, get_guild_config, get_user_config, align_text)
 
 
@@ -74,24 +74,12 @@ class CommandsCog(commands.Cog):
 
         guild_config = await get_guild_config(self.bot, ctx.guild.id)
         linked_role = guild_config.linked_role
-        afk_channel = guild_config.afk_channel
-        commands_channel = guild_config.commands_channel
-        g5_category = guild_config.g5_category
 
-        if not g5_category:
-            g5_category = await ctx.guild.create_category_channel(name='G5')
         if not linked_role:
             linked_role = await ctx.guild.create_role(name='Linked')
-        if not afk_channel:
-            afk_channel = await ctx.guild.create_voice_channel(name='G5 AFK', category=g5_category)
-        if not commands_channel:
-            commands_channel = await ctx.guild.create_text_channel(name='g5-commands', category=g5_category)
 
         guild_data = {
             'linked_role': linked_role.id,
-            'afk_channel': afk_channel.id,
-            'commands_channel': commands_channel.id,
-            'g5_category': g5_category.id,
             'user_id': user_id,
             'api_key': api_key
         }
@@ -107,21 +95,19 @@ class CommandsCog(commands.Cog):
     @commands.has_permissions(kick_members=True)
     async def lobby(self, ctx, *args):
         """"""
-        guild_config = await check_channel(self.bot, ctx)
-
+        guild_config = await check_setup(self.bot, ctx)
         args = ' '.join(arg for arg in args)
 
         if not len(args):
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
-
-        g5_category = guild_config.g5_category
+        
         linked_role = guild_config.linked_role
         everyone_role = get(ctx.guild.roles, name='@everyone')
-
+        category = await ctx.guild.create_category_channel(args)
         awaitables = [
-            ctx.guild.create_text_channel(name=f'{args}-queue', category=g5_category),
-            ctx.guild.create_voice_channel(name=f'{args} Lobby', category=g5_category, user_limit=10),
+            ctx.guild.create_text_channel(name=f'{args}-queue', category=category),
+            ctx.guild.create_voice_channel(name=f'{args} Lobby', category=category, user_limit=10),
             self.bot.db.insert_pugs(),
         ]
         results = await asyncio.gather(*awaitables, loop=self.bot.loop)
@@ -148,7 +134,7 @@ class CommandsCog(commands.Cog):
                       brief=translate('command-link-brief'))
     async def link(self, ctx, *args):
         """"""
-        guild_config = await check_channel(self.bot, ctx)
+        guild_config = await check_setup(self.bot, ctx)
         user_config = await get_user_config(self.bot, ctx.author.id)
         if user_config is not None:
             msg = translate('command-link-already-linked', user_config.steam)
@@ -184,8 +170,7 @@ class CommandsCog(commands.Cog):
     @commands.command(brief=translate('command-unlink-brief'))
     async def unlink(self, ctx):
         """"""
-        guild_config = await check_channel(self.bot, ctx)
-
+        guild_config = await check_setup(self.bot, ctx)
         await self.bot.db.delete_users([ctx.author.id])
         await ctx.author.remove_roles(guild_config.linked_role)
 
@@ -205,9 +190,7 @@ class CommandsCog(commands.Cog):
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        await check_channel(self.bot, ctx)
         pug_config = await check_pug(self.bot, ctx, queue_id)
-        guild_config = await get_guild_config(self.bot, ctx.guild.id)
         lobby_channel = pug_config.lobby_channel
 
         if self.lobby_cog.locked_lobby[pug_config.id]:
@@ -221,7 +204,7 @@ class CommandsCog(commands.Cog):
         await self.lobby_cog.update_last_msg(pug_config, embed)
 
         for member in lobby_channel.members:
-            await member.move_to(guild_config.afk_channel)
+            await member.move_to(ctx.guild.afk_channel)
 
         self.lobby_cog.locked_lobby[pug_config.id] = False
         _embed = self.bot.embed_template(title=msg, color=self.bot.colors['green'])
@@ -241,7 +224,6 @@ class CommandsCog(commands.Cog):
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        await check_channel(self.bot, ctx)
         pug_config = await check_pug(self.bot, ctx, queue_id)
         curr_cap = pug_config.capacity
 
@@ -264,13 +246,11 @@ class CommandsCog(commands.Cog):
         embed.set_footer(text=translate('command-cap-footer'))
         await self.lobby_cog.update_last_msg(pug_config, embed)
         msg = translate('command-cap-success', new_cap)
-
-        guild_config = await get_guild_config(self.bot, ctx.guild.id)
         lobby_channel = pug_config.lobby_channel
 
         awaitables = []
         for player in lobby_channel.members:
-            awaitables.append(player.move_to(guild_config.afk_channel))
+            awaitables.append(player.move_to(ctx.guild.afk_channel))
         awaitables.append(lobby_channel.edit(user_limit=new_cap))
         await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
 
@@ -293,7 +273,6 @@ class CommandsCog(commands.Cog):
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        await check_channel(self.bot, ctx)
         pug_config = await check_pug(self.bot, ctx, queue_id)
         curr_method = pug_config.team_method
         valid_methods = ['autobalance', 'captains', 'random']
@@ -329,7 +308,6 @@ class CommandsCog(commands.Cog):
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        await check_channel(self.bot, ctx)
         pug_config = await check_pug(self.bot, ctx, queue_id)
         curr_method = pug_config.captain_method
         valid_methods = ['volunteer', 'rank', 'random']
@@ -365,7 +343,6 @@ class CommandsCog(commands.Cog):
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        await check_channel(self.bot, ctx)
         pug_config = await check_pug(self.bot, ctx, queue_id)
         curr_method = pug_config.map_method
         valid_methods = ['ban', 'vote', 'random']
@@ -400,7 +377,6 @@ class CommandsCog(commands.Cog):
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        await check_channel(self.bot, ctx)
         pug_config = await check_pug(self.bot, ctx, queue_id)
         message = await ctx.send('Map Pool')
         menu = MapPoolMessage(message, self.bot, ctx.author, pug_config)
@@ -419,7 +395,6 @@ class CommandsCog(commands.Cog):
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        await check_channel(self.bot, ctx)
         pug_config = await check_pug(self.bot, ctx, queue_id)
         curr_spectator_ids = await self.bot.db.get_spect_users(pug_config.id)
         curr_spectators = [ctx.guild.get_member(spectator_id) for spectator_id in curr_spectator_ids]
@@ -473,7 +448,7 @@ class CommandsCog(commands.Cog):
     @commands.has_permissions(kick_members=True)
     async def end(self, ctx, match_id=None):
         """"""
-        guild_config = await check_channel(self.bot, ctx)
+        guild_config = await check_setup(self.bot, ctx)
         if match_id is None:
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
@@ -493,7 +468,6 @@ class CommandsCog(commands.Cog):
                       aliases=['rank'])
     async def stats(self, ctx):
         """"""
-        guild_config = await check_channel(self.bot, ctx)
         user = ctx.author
         player = await self.bot.api.players_stats([user])
         player_stats = dict(player[0].__dict__)
@@ -515,8 +489,6 @@ class CommandsCog(commands.Cog):
                       aliases=['top', 'ranks'])
     async def leaders(self, ctx):
         """"""
-        await check_channel(self.bot, ctx)
-
         num = 10
         guild_players = await self.bot.api.players_stats(ctx.guild.members)
         guild_players.sort(key=lambda u: (u.average_rating), reverse=True)
@@ -552,8 +524,7 @@ class CommandsCog(commands.Cog):
     @commands.has_permissions(ban_members=True)
     async def ban(self, ctx, *args):
         """"""
-        guild_config = await check_channel(self.bot, ctx)
-
+        guild_config = await check_setup(self.bot, ctx)
         if len(ctx.message.mentions) == 0:
             msg = translate('command-ban-mention-to-ban')
             raise commands.UserInputError(message=msg)
@@ -581,8 +552,7 @@ class CommandsCog(commands.Cog):
     @commands.has_permissions(ban_members=True)
     async def unban(self, ctx):
         """"""
-        guild_config = await check_channel(self.bot, ctx)
-
+        guild_config = await check_setup(self.bot, ctx)
         if len(ctx.message.mentions) == 0:
             msg = translate('command-unban-mention-to-unban')
             raise commands.UserInputError(message=msg)
