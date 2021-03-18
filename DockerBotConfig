@@ -1,0 +1,9 @@
+DISCORD_BOT_TOKEN= #Bot token from the Discord developer portal
+DISCORD_BOT_LANGUAGE= # Bot language (key from translations.json), E.g. "en"
+
+G5API_URL= # URL where the web panel is hosted
+
+POSTGRESQL_USER= # "PUGs" (if you used the same username)
+POSTGRESQL_PASSWORD= # The DB password you set
+POSTGRESQL_DB= # "PUGs" (if you used the same DB name)
+POSTGRESQL_HOST= # The IP address of the postgres server (get this with "ipconfig" on Windows or "ip addr" on linux)
