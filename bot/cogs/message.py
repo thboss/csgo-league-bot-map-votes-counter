@@ -208,6 +208,7 @@ class TeamDraftMessage(discord.Message):
         self.users_left.remove(pickee)
         picking_team.append(pickee)
         self.pick_number += 1
+        return True
 
     async def _process_pick(self, reaction, user):
         """"""
