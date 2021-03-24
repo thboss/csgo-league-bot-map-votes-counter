@@ -20,10 +20,19 @@ with open('translations.json', encoding="utf8") as f:
 
 
 def translate(text, *args):
-    try:
-        return translations[os.environ['DISCORD_BOT_LANGUAGE']][text].format(*args)
-    except (KeyError, ValueError):
-        return translations['en'][text].format(*args)
+    trans_text = ''
+    if args:
+        try:
+            trans_text = translations[os.environ['DISCORD_BOT_LANGUAGE']][text].format(*args)
+        except (KeyError, ValueError):
+            trans_text = translations['en'][text].format(*args)
+    else:
+        try:
+            trans_text = translations[os.environ['DISCORD_BOT_LANGUAGE']][text].replace('{}', '')
+        except (KeyError, ValueError):
+            trans_text = translations['en'][text].replace('{}', '')
+
+    return trans_text
 
 
 def timedelta_str(tdelta):
