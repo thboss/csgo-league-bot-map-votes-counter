@@ -153,5 +153,157 @@
         "message-player":               "Players",
 
         "invalid-usage":                "**Invalid usage: `{}{}`**"
+    },
+
+    "ru": {
+        "command-setup-brief":          "Настроить данные пользовательского API (необходимо иметь права администратора)",
+        "command-setup-enter-userid":   "**Введите свой идентификатор пользователя в [G5API]({})**",
+        "command-setup-footer":         "У вас есть 60 секунд на ответ!",
+        "command-setup-no-answer":      "Извини! Слишком долгий ответ!",
+        "command-setup-user-invalid":   "Извини! Этот идентификатор пользователя не существует в G5API ❌",
+        "command-setup-user-valid":     "**Идентификатор пользователя действителен** ✅",
+        "command-setup-enter-key":      "**Пожалуйста, введите свой ключ API отсюда [G5API]({}/user)**",
+        "command-setup-key-invalid":    "Извини! Ваш ключ API недействителен! ❌",
+        "command-setup-key-valid":      "**Ключ API действителен** ✅",
+        "command-setup-completed":      "**Установка успешно завершена** ✅",
+
+        "command-lobby-brief":          "Создайте новое лобби (необходимы иметь права администратора)",
+        "command-lobby-success":        "Успешно создано **{}** лобби",
+
+        "command-link-brief":           "Свяжите учетную запись Discord с Steam id (должны быть kick права)",
+        "command-link-already-linked":  "Ваша учетная запись уже привязана к [steam account](https://steamcommunity.com/profiles/{})",
+        "command-link-steam-used":      "Извини! Эта учетная запись Steam уже связана с другой учетной записью Discord",
+        "command-link-steam-invalid":   "Пожалуйста, введите действительный SteamID или URL-адрес сообщества!",
+        "command-link-success":         "Ваша учетная запись успешно связана с [steam account](https://steamcommunity.com/profiles/{}) ✅",
+
+        "command-unlink-brief":         "Отключить аккаунт Discord от их Steam id (необходимы иметь права администратора)",
+        "command-unlink-success":       "**Игрок {} успешно отвязан** ✅",
+
+        "command-check-brief":          "Проверьте, связана ли учетная запись Discord с идентификатором Steam, и свяжите их",
+        "command-check-not-linked":     "Извини! Ваш Discord не привязан к Steam id!",
+        "command-check-you-banned":     "Извини! Вы заблокированы",
+        "command-check-you-in-match":   "Извини! Вы не можете связать аккаунты, когда находитесь в матче",
+        "command-check-you-in-lobby":   "Извини! Вы не можете связать аккаунты, когда находитесь в лобби",
+        "command-check-success":        "**Вы связаны с [Steam account](https://steamcommunity.com/profiles/{})** ✅",
+
+        "command-empty-brief":          "Очистить очередь (должны быть kick права)",
+        "command-empty-locked":         "Извини! Вы не можете очистить очередь при настройке матча",
+        "command-empty-success":        "Очередь очищена",
+
+        "command-cap-brief":            "Задать вместимость очереди (должны быть kick права)",
+        "command-cap-already":          "Вместимость уже {}",
+        "command-cap-out-range":        "Задать вместимость очереди (2-100)",
+        "command-cap-locked":           "Нельзя изменить вместимость очереди пока идёт настройка матча",
+        "command-cap-footer":           "Очередь очищена из-за изменения вместимости",
+        "command-cap-success":          "Вместимость очереди теперь **{}** ✅",
+
+        "command-teams-brief":          "Установите метод создания команды (должны быть kick права)",
+        "command-teams-method":         "Текущий метод создания команды: {}",
+        "command-teams-already":        "Текущий метод создания команды уже настроен на {}",
+        "command-teams-invalid":        "Метод создания команды должен быть {}, {} или {}",
+        "command-teams-changed":        "Метод создания команды установлен на **{}** ✅",
+
+        "command-captains-brief":       "Установите метод выбора капитана (должны быть kick права)",
+        "command-captains-method":      "Текущий метод выбора капитана {}",
+        "command-captains-already":     "Текущий метод выбора капитана уже установлен на {}",
+        "command-captains-invalid":     "Метод выбора капитана должен быть {}, {} или {}",
+        "command-captains-changed":     "Установлен метод выбора капитана **{}** ✅",
+
+        "command-maps-brief":           "Установите метод выбора карты (должны быть kick права)",
+        "command-maps-method":          "Текущий метод выбора карты {}",
+        "command-maps-already":         "Текущий метод выбора карты уже установлен на {}",
+        "command-maps-invalid":         "Метод выбора карты должен быть{}, {} или {}",
+        "command-maps-changed":         "Установлен метод выбора карты **{}** ✅",
+
+        "command-mpool-brief":          "Добавить или удалить карты из пула карт (должны быть kick права)",
+
+        "command-spectators-brief":     "Просмотр / добавление / удаление зрителей матча (должны быть kick права)",
+        "command-spectators-already":   "**{}** уже в зрителях!",
+        "command-spectators-added":     "Добавлен **{}** зрителем ✅",
+        "command-spectators-not":       "**{}** нет в зрителях!",
+        "ommand-spectators-removed":    "Убран **{}** из зрителей ✅",
+
+        "command-end-brief":            "Отменить live матч (должны быть kick права)",
+        "command-end-invalid-id":       "Идентификатор матча {} недействителен или уже завершен",
+        "command-end-canceled":         "Идентификатор матча **{}** только что отменен ✅",
+
+        "command-stats-brief":          "Отобразить свою статистику на сервере",
+        "command-leaders-brief":        "Display server leaderboard",
+
+        "command-ban-brief":            "Запретить всем упомянутым пользователям входить в лобби (должны быть ban права)",
+        "command-ban-mention-to-ban":   "Упомяните пользователя в команде, чтобы забанить его",
+        "command-ban-footer":           "Забаненные пользователи удалены из лобби",
+
+        "command-unban-brief":          "Разбаньте всех упомянутых пользователей, чтобы они могли присоединиться к лобби (должны быть ban права)",
+        "command-unban-mention-to-unban":"Упомяните пользователей в команде, чтобы разблокировать их",
+        "command-unban-footer":         "Упомянутые пользователи теперь могут присоединяться к лобби",
+        "command-required-perm":        "Извини! У вас отсутствует **{}** разрешение на использование этой команды!",
+        "command-missing-channel":      "Извини! Эти команды разрешены только в {}",
+        "command-not-setup":            "Извини! Пожалуйста, выполните `g!setup`, чтобы использовать эту команду",
+        "command-missing-mention-channel":"Извини! Пожалуйста, укажите канал очереди",
+
+        "help-brief":                   "Показать меню справки",
+        "help-not-valid":               "команда `{}` недействительна! ",
+        "help-did-you-mean":            "Ты имел в виду",
+        "help-use-help":                "Используйте `{}help` для получения списка команд.",
+
+        "lobby-is-empty":               "_Лобби пустое..._",
+        "lobby-footer":                 "Игроки получат уведомление, когда лобби заполнится.",
+        "lobby-user-not-linked":        "Невозможно добавить **{}**: аккаунт не привязан",
+        "lobby-user-is-banned":         "Невозможно добавить **{}**: пользователь заблокирован",
+        "lobby-user-in-spectators":     "Невозможно добавить **{}**: пользователь является зрителем",
+        "lobby-user-in-lobby":          "Невозможно добавить **{}**: пользователь уже находится в лобби",
+        "lobby-user-in-another-lobby":  "Невозможно добавить **{}**: пользователь уже находится в другом лобби",
+        "lobby-user-in-match":          "Невозможно добавить **{}**: пользователь уже участвует в матче",
+        "lobby-is-full":                "Невозможно добавить **{}**: очередь заполнена",
+        "lobby-user-added":             "Игрок **{}** добавлен в лобби",
+        "lobby-user-not-in-lobby":      "Невозможно удалить **{}**: пользователя нет в холле",
+        "lobby-user-removed":           "Игрок **{}** удален из лобби",
+        "lobby-players-in-lobby":       "Текущие игроки в лобби",
+        "lobby-not-all-ready":          "Не все были готовы!",
+        "lobby-unready-footer":         "Пропавшие игроки удалены из очереди.",
+
+        "match-took-too-long":          "Настройка матча заняла слишком много времени!",
+        "match-server-ready":           "Сервер матча готов!",
+        "match-server-info":            "**URL:** {}\n**Консоль:** `{}`",
+        "match-id":                     "Матч #{}",
+        "match-spectators":             "Наблюдатели",
+        "match-no-spectators":          "Нет наблюдателей",
+        "match-server-message-footer":  "Сервер закроется через 5 минут, если никто не присоединится",
+        "match-looking-server":         "Ищем доступный сервер :hourglass:",
+        "match-no-servers":             "**Извини все сервера заняты!\nПопробуйте позже.**",
+        "match-problem":                "Упс проблема!",
+        "match-team":                   "Команда {}",
+
+        "message-team-pick-footer":     "Отреагируйте на любой из номеров ниже, чтобы выбрать игрока",
+        "message-team-empty":           "_Пусто_",
+        "message-players-left":         "__Игроков осталось__",
+        "message-capt1":                "Капитан 1: {}",
+        "message-capt2":                "Капитан 2: {}",
+        "message-current-capt":         "Сейчас выбор: {}",
+        "message-info":                 "__Инфо__",
+        "message-team-picked":          "Команда **{}** выбрала **{}**",
+        "message-team-draft-begun":     "Пик игроков начался!",
+
+        "message-map-bans-begun":       "Бан карт начался!",
+        "message-map-veto-footer":      "Нажми на emoji внизу, чтобы забанить карту",
+        "message-maps-left":            "__Карт осталось__",
+        "message-user-banned-map":      "**{}** забанена {}",
+
+        "message-vote-map-started":             "Голосование карты началось! (1 min)",
+        "message-maps":                 "Карты",
+        "message-vote-map-footer":      "Нажми на emoji внизу чтобы проголосовать за карту",
+
+        "message-map-pool":             "Мап пул",
+        "message-active-maps":          "__Активные карты__",
+        "message-inactive-maps":        "__Неактивные карты__",
+        "message-none":                 "*Нету*",
+        "message-map-pool-footer":      "Нажми на emoji внизу чтобы включить или выключить\nкарту в маппуле и нажми на ✅ чтобы сохранить",
+
+        "message-react-ready":          "Отреагируйте с помощью {} ниже, чтобы принять игру (1 minute)",
+        "message-lobby-filled-up":      "Очередь заполнилась!",
+        "message-player":               "Игроки",
+
+        "invalid-usage":                "**Invalid usage: `{}{}`**"
     }
 }
