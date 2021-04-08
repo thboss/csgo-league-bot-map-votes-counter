@@ -159,9 +159,12 @@ class ApiHelper:
 
     async def create_team(self, users, auth):
         """"""
-        auths = await self.bot.db.get_users([user.id for user in users])
+        user_ids = [user.id for user in users]
+        users_data = await self.bot.db.get_users(user_ids)
+        users_data.sort(key=lambda x: user_ids.index(x[0]))
+
         auth_names = {
-            auths[index][1]: {
+            users_data[index][1]: {
                 'name': user.display_name,
                 'captain': int(users.index(user) == 0)
             } for index, user in enumerate(users)
@@ -172,7 +175,7 @@ class ApiHelper:
             'user_id': auth['user_id'],
             'user_api': auth['api_key'],
             'name': users[0].display_name,
-            'flag': auths[0][2],
+            'flag': users_data[0][2],
             'public_team': 0,
             'auth_name': auth_names
         }
