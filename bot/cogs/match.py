@@ -6,10 +6,12 @@ from discord.utils import get
 from discord.errors import NotFound
 
 from .message import TeamDraftMessage, MapVetoMessage, MapVoteMessage
-from .utils.utils import translate, get_match_config
+from .utils.utils import translate, get_match_config, align_text
 
 from random import shuffle, choice
 from traceback import print_exception
+from datetime import datetime
+import time
 import sys
 
 
@@ -153,10 +155,83 @@ class MatchCog(commands.Cog):
                 except Exception as e:
                     print_exception(type(e), e, e.__traceback__, file=sys.stderr)
                     continue
-                if match_id in api_matches and not api_matches[match_id]:
-                    await self.remove_teams_channels(match)
+                if match_id in api_matches:
+                    await self.update_match(match_id, match, api_matches[match_id])
         else:
             self.check_matches.cancel()
+
+    async def update_match(self, match_id, match, live):
+        """"""
+        scoreboard = await self.bot.api.match_scoreboard(match_id)
+        if not scoreboard:
+            if not live:
+                await self.remove_teams_channels(match)
+            return
+
+        team1_info = await self.bot.api.get_team(scoreboard['team1_players'][0]['team_id'])
+        team2_info = await self.bot.api.get_team(scoreboard['team2_players'][0]['team_id'])
+        map_stats = await self.bot.api.map_stats(match_id)
+        try:
+            team1_name = team1_info['name']
+            team2_name = team2_info['name']
+        except (KeyError, TypeError):
+            team1_name = team2_name = None
+        
+        # Generate leaderboard text
+        description = ''
+        for team in [scoreboard['team1_players'], scoreboard['team2_players']]:
+            team.sort(key=lambda x: x['kills'], reverse=True)
+            data = [['Player'] + [player['name'] for player in team],
+                    ['Kills'] + [f"{player['kills']}" for player in team],
+                    ['Assists'] + [f"{player['assists']}" for player in team],
+                    ['Deaths'] + [f"{player['deaths']}" for player in team],
+                    ['KDR'] + [f"{0 if player['deaths'] == 0 else player['kills']/player['deaths']:.2f}" for player in team],
+                    ['Score'] + [f"{player['contribution_score']}" for player in team]]
+
+            data[0] = [name if len(name) < 12 else name[:9] + '...' for name in data[0]]  # Shorten long names
+            widths = list(map(lambda x: len(max(x, key=len)), data))
+            aligns = ['left', 'center', 'center', 'center', 'center', 'center']
+            z = zip(data, widths, aligns)
+            formatted_data = [list(map(lambda x: align_text(x, width, align), col)) for col, width, align in z]
+            formatted_data = list(map(list, zip(*formatted_data)))  # Transpose list for .format() string
+            description += '```ml\n    {}  {}  {}  {}  {}  {} \n'.format(*formatted_data[0])
+
+            for rank, player_row in enumerate(formatted_data[1:], start=1):
+                description += ' {}. {}  {}  {}  {}  {}  {} \n'.format(rank, *player_row)
+
+            description += '```\n'
+        
+        start_time = datetime.fromisoformat(map_stats["start_time"].replace("Z", "+00:00")).strftime("%Y-%m-%d  %H:%M:%S")
+        description += f'**Start Time:** {start_time}\n'
+        if map_stats['end_time']:
+            end_time = datetime.fromisoformat(map_stats["end_time"].replace("Z", "+00:00")).strftime("%Y-%m-%d  %H:%M:%S")
+            description += f'**End Time:** {end_time}\n'
+        if not live:
+            if map_stats['demoFile']:
+                description += f'**[Download Demo]({self.bot.web_url}/api/demo/{map_stats["demoFile"]})**'
+
+        if team1_name:
+            match_score = f'{translate("match-id", match_id)}  Team {team1_name}  [{map_stats["team1_score"]}:{map_stats["team2_score"]}]  Team {team2_name}'
+        else:
+            try:
+                match_score = match.message.embeds[0].author.name
+            except NotFound:
+                match_score = 'message deleted!'
+
+        # Send scoreboard
+        color = self.bot.colors['green'] if live else self.bot.colors['red']
+        embed = self.bot.embed_template(description=description, color=color)
+        embed.set_author(name=match_score,
+                         url=f'{self.bot.web_url}/match/{match_id}',
+                         icon_url=self.bot.all_maps[map_stats['map_name']].image_url)
+
+        try:
+            await match.message.edit(embed=embed)
+        except NotFound:
+            pass
+        
+        if not live:
+            await self.remove_teams_channels(match)
 
     async def create_teams_channels(self, match_id, team_one, team_two, pug_config, guild_config, message):
         """"""

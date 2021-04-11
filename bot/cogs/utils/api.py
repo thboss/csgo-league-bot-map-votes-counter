@@ -130,8 +130,7 @@ class ApiHelper:
 
         # Start session
         self.logger.info('Starting API helper client session')
-        self.session = aiohttp.ClientSession(loop=loop, json_serialize=lambda x: json.dumps(x, ensure_ascii=False),
-                                             raise_for_status=True)
+        self.session = aiohttp.ClientSession(loop=loop, json_serialize=lambda x: json.dumps(x, ensure_ascii=False))
 
     async def close(self):
         """ Close the API helper's session. """
@@ -208,6 +207,48 @@ class ApiHelper:
             resp_data = await resp.json()
             return {match['id']: match['end_time'] is None for match in resp_data['matches']}
 
+    async def get_team(self, team_id):
+        """"""
+        url = f'{self.web_url}/api/teams/{team_id}'
+
+        async with self.session.get(url=url) as resp:
+            resp_data = await resp.json()
+            try:
+                return resp_data['team']
+            except KeyError:
+                pass
+
+    async def map_stats(self, match_id, map_number=0):
+        url = f'{self.web_url}/api/mapstats/{match_id}/{map_number}'
+
+        async with self.session.get(url=url) as resp:
+            resp_data = await resp.json()
+            try:
+                return resp_data['mapstat']
+            except KeyError:
+                pass
+
+    async def match_scoreboard(self, match_id):
+        """"""
+        url = f'{self.web_url}/api/playerstats/match/{match_id}'
+        
+        async with self.session.get(url=url) as resp:
+            resp_data = await resp.json()
+            try:
+                players = resp_data['playerstats']
+            except KeyError:
+                pass
+            else:
+                p1 = players[0]['team_id']
+                team1_players, team2_players = [], []
+                for player in players:
+                    if player['team_id'] == p1:
+                        team1_players.append(player)
+                    else:
+                        team2_players.append(player)
+
+                return {'team1_players': team1_players, 'team2_players': team2_players}
+
     async def server_status(self, server_id, auth):
         """"""
         url = f'{self.web_url}/api/servers/{server_id}/status'
@@ -263,7 +304,9 @@ class ApiHelper:
         }
 
         if spectators:
-            spects_data = await self.bot.db.get_users([user.id for user in spectators])
+            spec_ids = [spec.id for spec in spectators]
+            spects_data = await self.bot.db.get_users(spec_ids)
+            spects_data.sort(key=lambda x: spec_ids.index(x[0]))
             data['spectator_auths'] = {spects_data[index][1]: spec.desplay_name for index, spec in enumerate(spectators)}
 
         async with self.session.post(url=url, json=[data]) as resp:
