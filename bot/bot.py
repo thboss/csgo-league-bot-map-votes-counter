@@ -43,7 +43,7 @@ class PUGsBot(commands.AutoShardedBot):
             'orange': 0xFF9933
         }
 
-        self.activity = discord.Activity(type=discord.ActivityType.watching, name="noobs use g!help")
+        self.activity = discord.Activity(type=discord.ActivityType.watching, name="noobs type g!help")
         self.logger = logging.getLogger('PUGs.bot')
 
         # Create DB helper to use connection pool

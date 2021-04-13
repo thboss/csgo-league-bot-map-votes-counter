@@ -5,6 +5,7 @@ import asyncio
 import json
 import logging
 import datetime
+from .utils import get_user_data
 
 
 class PlayerStats:
@@ -319,11 +320,30 @@ class ApiHelper:
         async with self.session.get(url=url, json=[data]) as resp:
             return resp.status == 200
 
-    async def players_stats(self, users):
+    async def player_stats(self, user):
         """"""
-        url = f'{self.web_url}/api/leaderboard/players/pug'
+        user_data = await get_user_data(self.bot, user.id)
+        if not user_data:
+            return
+
+        url = f'{self.web_url}/api/playerstats/{user_data.steam}/pug'
+
+        async with self.session.get(url=url) as resp:
+            resp_data = await resp.json()
+            try:
+                resp_data['pugstats']['discord'] = user.id
+                return PlayerStats(resp_data['pugstats'], self.web_url)
+            except KeyError:
+                return PlayerStats(new_player(user_data.steam), self.web_url)
+
+    async def leaderboard(self, users):
+        """"""
         users_data = await self.bot.db.get_users([user.id for user in users])
+        if not users_data:
+            return
         users_dict = dict(zip([data[1] for data in users_data], [data[0] for data in users_data]))
+
+        url = f'{self.web_url}/api/leaderboard/players/pug'
 
         async with self.session.get(url=url) as resp:
             resp_data = await resp.json()
