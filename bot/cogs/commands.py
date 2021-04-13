@@ -9,7 +9,7 @@ import asyncio
 
 from .message import MapPoolMessage
 from .utils.utils import (translate, timedelta_str, unbantime, check_setup,
-                          check_pug, get_guild_config, get_user_config, align_text)
+                          check_pug, get_guild_config, get_user_data, align_text)
 
 
 class CommandsCog(commands.Cog):
@@ -135,9 +135,9 @@ class CommandsCog(commands.Cog):
     async def link(self, ctx, *args):
         """"""
         guild_config = await check_setup(self.bot, ctx)
-        user_config = await get_user_config(self.bot, ctx.author.id)
-        if user_config is not None:
-            msg = translate('command-link-already-linked', user_config.steam)
+        user_data = await get_user_data(self.bot, ctx.author.id)
+        if user_data is not None:
+            msg = translate('command-link-already-linked', user_data.steam)
             raise commands.UserInputError(message=msg)
 
         try:
@@ -155,8 +155,8 @@ class CommandsCog(commands.Cog):
                     msg = translate('command-link-steam-invalid')
                     raise commands.UserInputError(message=msg)
 
-        user_config = await get_user_config(self.bot, str(steam_id), 'steam_id')
-        if user_config is not None:
+        user_data = await get_user_data(self.bot, str(steam_id), 'steam_id')
+        if user_data is not None:
             msg = translate('command-link-steam-used')
             raise commands.UserInputError(message=msg)
 
@@ -468,21 +468,28 @@ class CommandsCog(commands.Cog):
                       aliases=['rank'])
     async def stats(self, ctx):
         """"""
-        user = ctx.author
-        player = await self.bot.api.players_stats([user])
-        player_stats = dict(player[0].__dict__)
-        player_stats.pop('steam')
-        player_stats.pop('discord')
-        embed = self.bot.embed_template()
+        stats = await self.bot.api.player_stats(ctx.author)
+        if stats:
+            description = '```ml\n' \
+                          f' Kills:             {stats.kills} \n' \
+                          f' Deaths:            {stats.deaths} \n' \
+                          f' Assists:           {stats.assists} \n' \
+                          f' K/D Ratio:         {stats.kdr} \n' \
+                          f' Headshots:         {stats.hsk} \n' \
+                          f' Headshot Percent:  {stats.hsp} \n' \
+                          f' Matches Played:    {stats.total_maps} \n' \
+                          f' Wins:              {stats.wins} \n' \
+                          f' Win rate:          {stats.win_percent} \n' \
+                          f' ------------------------- \n' \
+                          f' Average Rating:    {stats.average_rating} \n' \
+                          '```'
+            embed = self.bot.embed_template(description=description)
+            embed.set_author(name=ctx.author.display_name, url=stats.profile,
+                             icon_url=ctx.author.avatar_url_as(size=128))
+        else:
+            title = f'Unable to get **{ctx.author.display_name}**\'s stats: Account not linked'
+            embed = self.bot.embed_template(title=title)            
 
-        for attr in list(player_stats):
-            state = attr.capitalize().replace('_', ' ')
-            if len(state) < 4:
-                state = state.upper()
-            player_stats[state] = player_stats.pop(attr)
-            embed.add_field(name=state, value=player_stats[state])
-
-        embed.set_author(name=user.display_name, url=player[0].profile, icon_url=user.avatar_url_as(size=128))
         await ctx.send(embed=embed)
 
     @commands.command(brief=translate('command-leaders-brief'),
@@ -490,7 +497,7 @@ class CommandsCog(commands.Cog):
     async def leaders(self, ctx):
         """"""
         num = 10
-        guild_players = await self.bot.api.players_stats(ctx.guild.members)
+        guild_players = await self.bot.api.leaderboard(ctx.guild.members)
         guild_players.sort(key=lambda u: (u.average_rating), reverse=True)
         guild_players = guild_players[:num]
 

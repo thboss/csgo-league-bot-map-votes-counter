@@ -242,7 +242,7 @@ class MatchConfig:
                    [guild.get_member(user_id) for user_id in team2_users])
 
 
-class UserConfig:
+class UserData:
     """"""
     def __init__(self, discord, steam, flag):
         self.discord = discord
@@ -284,10 +284,10 @@ async def get_match_config(bot, row_id):
     return await MatchConfig.from_dict(bot, match_data)
 
 
-async def get_user_config(bot, row_id, column='discord_id'):
+async def get_user_data(bot, row_id, column='discord_id'):
     """"""
     try:
         user_data = await bot.db.get_user(row_id, column)
     except AttributeError:
         return
-    return UserConfig.from_dict(user_data)
+    return UserData.from_dict(user_data)
