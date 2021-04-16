@@ -250,9 +250,9 @@ class UserData:
         self.flag = flag
 
     @classmethod
-    def from_dict(cls, user_data: dict):
+    def from_dict(cls, user_data: dict, guild):
         """"""
-        return cls(user_data['discord_id'],
+        return cls(guild.get_member(user_data['discord_id']),
                    user_data['steam_id'],
                    user_data['flag'])
 
@@ -284,10 +284,10 @@ async def get_match_config(bot, row_id):
     return await MatchConfig.from_dict(bot, match_data)
 
 
-async def get_user_data(bot, row_id, column='discord_id'):
+async def get_user_data(bot, guild, row_id, column='discord_id'):
     """"""
     try:
         user_data = await bot.db.get_user(row_id, column)
     except AttributeError:
         return
-    return UserData.from_dict(user_data)
+    return UserData.from_dict(user_data, guild)
