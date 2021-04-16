@@ -5,7 +5,6 @@ import asyncio
 import json
 import logging
 import datetime
-from .utils import get_user_data
 
 
 class PlayerStats:
@@ -318,20 +317,64 @@ class ApiHelper:
         }
 
         async with self.session.get(url=url, json=[data]) as resp:
-            return resp.status == 200
+            return resp.status
 
-    async def player_stats(self, user):
+    async def add_match_player(self, user_data, match_id, team, auth):
         """"""
-        user_data = await get_user_data(self.bot, user.id)
-        if not user_data:
-            return
+        url = f'{self.web_url}/api/matches/{match_id}/{"addspec" if team == "spec" else "adduser"}'
+        data = {
+            'user_id': auth['user_id'],
+            'user_api': auth['api_key'],
+            'steam_id': user_data.steam,
+            'team_id': team,
+            'nickname': user_data.discord.display_name
+        }
 
+        async with self.session.put(url=url, json=[data]) as resp:
+            return resp.status
+
+    async def remove_match_player(self, user_data, match_id, auth):
+        """"""
+        url = f'{self.web_url}/api/matches/{match_id}/removeuser'
+        data = {
+            'user_id': auth['user_id'],
+            'user_api': auth['api_key'],
+            'steam_id': user_data.steam,
+        }
+
+        async with self.session.put(url=url, json=[data]) as resp:
+            return resp.status
+
+    async def pause_match(self, match_id, auth):
+        """"""
+        url = f'{self.web_url}/api/matches/{match_id}/pause'
+        data = {
+            'user_id': auth['user_id'],
+            'user_api': auth['api_key']
+        }
+
+        async with self.session.get(url=url, json=[data]) as resp:
+            return resp.status
+
+    async def unpause_match(self, match_id, auth):
+        """"""
+        url = f'{self.web_url}/api/matches/{match_id}/unpause'
+        data = {
+            'user_id': auth['user_id'],
+            'user_api': auth['api_key']
+        }
+
+        async with self.session.get(url=url, json=[data]) as resp:
+            return resp.status
+
+    async def player_stats(self, user_data):
+        """"""
         url = f'{self.web_url}/api/playerstats/{user_data.steam}/pug'
 
         async with self.session.get(url=url) as resp:
             resp_data = await resp.json()
             try:
-                resp_data['pugstats']['discord'] = user.id
+                resp_data['pugstats']['discord'] = user_data.discord.id
                 return PlayerStats(resp_data['pugstats'], self.web_url)
             except KeyError:
                 return PlayerStats(new_player(user_data.steam), self.web_url)

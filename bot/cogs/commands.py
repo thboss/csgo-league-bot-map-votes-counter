@@ -135,7 +135,7 @@ class CommandsCog(commands.Cog):
     async def link(self, ctx, *args):
         """"""
         guild_config = await check_setup(self.bot, ctx)
-        user_data = await get_user_data(self.bot, ctx.author.id)
+        user_data = await get_user_data(self.bot, ctx.guild, ctx.author.id)
         if user_data is not None:
             msg = translate('command-link-already-linked', user_data.steam)
             raise commands.UserInputError(message=msg)
@@ -155,7 +155,7 @@ class CommandsCog(commands.Cog):
                     msg = translate('command-link-steam-invalid')
                     raise commands.UserInputError(message=msg)
 
-        user_data = await get_user_data(self.bot, str(steam_id), 'steam_id')
+        user_data = await get_user_data(self.bot, ctx.guild, str(steam_id), 'steam_id')
         if user_data is not None:
             msg = translate('command-link-steam-used')
             raise commands.UserInputError(message=msg)
@@ -453,14 +453,19 @@ class CommandsCog(commands.Cog):
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        try:
-            await self.bot.api.cancel_match(match_id, guild_config.auth)
-        except:
-            msg = translate('command-end-invalid-id', match_id)
+        status_code = await self.bot.api.cancel_match(match_id, guild_config.auth)
+        if status_code != 200:
+            if status_code == 404:
+                msg = translate('command-end-not-found', match_id)
+            elif status_code == 403:
+                msg = translate('command-end-no-permission')
+            elif status_code == 401:
+                msg = translate('command-end-already-finished', match_id)
+            else:
+                msg = translate('command-end-unknown-error')
             raise commands.UserInputError(message=msg)
 
-        title = translate('command-end-canceled', match_id)
-
+        title = translate('command-end-success', match_id)
         embed = self.bot.embed_template(title=title)
         await ctx.send(embed=embed)
 
@@ -468,28 +473,28 @@ class CommandsCog(commands.Cog):
                       aliases=['rank'])
     async def stats(self, ctx):
         """"""
-        stats = await self.bot.api.player_stats(ctx.author)
-        if stats:
-            description = '```ml\n' \
-                          f' Kills:             {stats.kills} \n' \
-                          f' Deaths:            {stats.deaths} \n' \
-                          f' Assists:           {stats.assists} \n' \
-                          f' K/D Ratio:         {stats.kdr} \n' \
-                          f' Headshots:         {stats.hsk} \n' \
-                          f' Headshot Percent:  {stats.hsp} \n' \
-                          f' Matches Played:    {stats.total_maps} \n' \
-                          f' Wins:              {stats.wins} \n' \
-                          f' Win rate:          {stats.win_percent} \n' \
-                          f' ------------------------- \n' \
-                          f' Average Rating:    {stats.average_rating} \n' \
-                          '```'
-            embed = self.bot.embed_template(description=description)
-            embed.set_author(name=ctx.author.display_name, url=stats.profile,
-                             icon_url=ctx.author.avatar_url_as(size=128))
-        else:
-            title = f'Unable to get **{ctx.author.display_name}**\'s stats: Account not linked'
-            embed = self.bot.embed_template(title=title)            
+        user_data = await get_user_data(self.bot, ctx.guild, ctx.author.id)
+        if not user_data:
+            msg = f'Unable to get {ctx.author.display_name}\'s stats: Account not linked'
+            raise commands.UserInputError(message=msg)
 
+        stats = await self.bot.api.player_stats(user_data)
+        description = '```ml\n' \
+                     f' {translate("command-stats-kills")}:             {stats.kills} \n' \
+                     f' {translate("command-stats-deaths")}:            {stats.deaths} \n' \
+                     f' {translate("command-stats-assists")}:           {stats.assists} \n' \
+                     f' {translate("command-stats-kdr")}:         {stats.kdr} \n' \
+                     f' {translate("command-stats-hs")}:         {stats.hsk} \n' \
+                     f' {translate("command-stats-hsp")}:  {stats.hsp} \n' \
+                     f' {translate("command-stats-played")}:    {stats.total_maps} \n' \
+                     f' {translate("command-stats-wins")}:        {stats.wins} \n' \
+                     f' {translate("command-stats-win-rate")}:       {stats.win_percent} \n' \
+                     f' ------------------------- \n' \
+                     f' {translate("command-stats-rating")}:    {stats.average_rating} \n' \
+                      '```'
+        embed = self.bot.embed_template(description=description)
+        embed.set_author(name=ctx.author.display_name, url=stats.profile,
+                            icon_url=ctx.author.avatar_url_as(size=128))
         await ctx.send(embed=embed)
 
     @commands.command(brief=translate('command-leaders-brief'),
@@ -581,6 +586,144 @@ class CommandsCog(commands.Cog):
         for user in ctx.message.mentions:
             await user.add_roles(guild_config.linked_role)
 
+    @commands.command(usage='add <match_id> <team1|team2|spec> <mention>',
+                      brief='Add a player to a live match')
+    @commands.has_permissions(kick_members=True)
+    async def add(self, ctx, match_id=None, team=None):
+        """"""
+        guild_config = await check_setup(self.bot, ctx)
+
+        try:
+            user = ctx.message.mentions[0]
+        except IndexError:
+            msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            raise commands.UserInputError(message=msg)
+
+        if not match_id or team not in ['team1', 'team2', 'spec']:
+            msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            raise commands.UserInputError(message=msg)
+
+        user_data = await get_user_data(self.bot, ctx.guild, user.id)
+        if not user_data:
+            msg = translate('command-add-not-linked', user.mention)
+            raise commands.UserInputError(message=msg)
+
+        status_code = await self.bot.api.add_match_player(user_data, match_id, team, guild_config.auth)
+        
+        if status_code != 200:
+            if status_code == 404:
+                msg = translate('command-add-match-not-exist', match_id)
+            elif status_code == 403:
+                msg = translate('command-add-no-permission')
+            elif status_code == 401:
+                msg = translate('command-add-already-finished', match_id)
+            elif status_code == 500:
+                msg = translate('command-add-game-server-error')
+            else:
+                msg = translate('command-add-unknown-error')
+            raise commands.UserInputError(message=msg)
+
+        msg = translate('command-add-success', user.mention, match_id)
+        embed = self.bot.embed_template(description=msg)
+        await ctx.send(embed=embed)
+
+    @commands.command(usage='remove <match_id> <mention>',
+                      brief='Remove a player from a live match')
+    @commands.has_permissions(kick_members=True)
+    async def remove(self, ctx, match_id=None):
+        """"""
+        guild_config = await check_setup(self.bot, ctx)
+
+        try:
+            user = ctx.message.mentions[0]
+        except IndexError:
+            msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            raise commands.UserInputError(message=msg)
+
+        if not match_id:
+            msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            raise commands.UserInputError(message=msg)
+
+        user_data = await get_user_data(self.bot, ctx.guild, user.id)
+        if not user_data:
+            msg = translate('command-add-not-linked', user.mention)
+            raise commands.UserInputError(message=msg)
+
+        status_code = await self.bot.api.remove_match_player(user_data, match_id, guild_config.auth)
+        
+        if status_code != 200:
+            if status_code == 404:
+                msg = translate('command-remove-match-not-exist', match_id)
+            elif status_code == 403:
+                msg = translate('command-remove-no-permission')
+            elif status_code == 401:
+                msg = translate('command-remove-already-finished', match_id)
+            elif status_code == 500:
+                msg = translate('command-remove-game-server-error')
+            else:
+                msg = translate('command-remove-unknown-error')
+            raise commands.UserInputError(message=msg)
+
+        msg = translate('command-remove-success', user.mention, match_id)
+        embed = self.bot.embed_template(description=msg)
+        await ctx.send(embed=embed)
+
+    @commands.command(usage='pause <match_id>',
+                      brief='Pause live match')
+    @commands.has_permissions(kick_members=True)
+    async def pause(self, ctx, match_id=None):
+        """"""
+        guild_config = await check_setup(self.bot, ctx)
+
+        if not match_id:
+            msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            raise commands.UserInputError(message=msg)
+
+        status_code = await self.bot.api.pause_match(match_id, guild_config.auth)
+        
+        if status_code != 200:
+            if status_code == 404:
+                msg = f'Unable to pause match: Match #{match_id} doesn\'t exist!'
+            elif status_code == 403:
+                msg = 'Unable to pause match: No permission!'
+            elif status_code == 401:
+                msg = f'Unable to pause match: Match #{match_id} is already finished!'
+            else:
+                msg = 'Unable to pause match: Unknown error!'
+            raise commands.UserInputError(message=msg)
+
+        msg = f'Match #{match_id} paused successfully'
+        embed = self.bot.embed_template(description=msg)
+        await ctx.send(embed=embed)
+
+    @commands.command(usage='unpause <match_id>',
+                      brief='Unpause live match')
+    @commands.has_permissions(kick_members=True)
+    async def unpause(self, ctx, match_id=None):
+        """"""
+        guild_config = await check_setup(self.bot, ctx)
+
+        if not match_id:
+            msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            raise commands.UserInputError(message=msg)
+
+        status_code = await self.bot.api.unpause_match(match_id, guild_config.auth)
+        
+        if status_code != 200:
+            if status_code == 404:
+                msg = f'Unable to unpause match: Match #{match_id} doesn\'t exist!'
+            elif status_code == 403:
+                msg = 'Unable to unpause match: No permission!'
+            elif status_code == 401:
+                msg = f'Unable to unpause match: Match #{match_id} is already finished!'
+            else:
+                msg = 'Unable to unpause match: Unknown error!'
+            raise commands.UserInputError(message=msg)
+
+        msg = f'Match #{match_id} unpaused successfully'
+        embed = self.bot.embed_template(description=msg)
+        await ctx.send(embed=embed)
+
     @setup.error
     @lobby.error
     @link.error
@@ -593,8 +736,13 @@ class CommandsCog(commands.Cog):
     @mpool.error
     @spectators.error
     @end.error
+    @stats.error
     @ban.error
     @unban.error
+    @add.error
+    @remove.error
+    @pause.error
+    @unpause.error
     async def config_error(self, ctx, error):
         """"""
         if isinstance(error, commands.MissingPermissions):
