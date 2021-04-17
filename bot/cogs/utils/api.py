@@ -274,6 +274,8 @@ class ApiHelper:
         if not match_server:
             raise ValueError('No servers!')
 
+        total_players = len(team_one) + len(team_two)
+
         url = f'{self.web_url}/api/matches'
         data = {
             'user_id': auth['user_id'],
@@ -288,14 +290,17 @@ class ApiHelper:
             'max_maps': 1,
             'veto_mappool': map_pick.dev_name,
             'skip_veto': 1,
-            'veto_first': 'tram1',
+            'veto_first': 'team1',
             'side_type': 'always_knife',
-            'players_per_team': len(team_one),
-            'min_players_to_ready': len(team_two),
+            'players_per_team': total_players // 2,
+            'min_players_to_ready': total_players // 2,
             'match_cvars': {
                 'sv_hibernate_when_empty': 0,
+                'game_mode': 1 if total_players > 6 else 2,
+                'get5_live_cfg': 'get5/live_competitive.cfg' if total_players > 6 else 'get5/live_wingman.cfg',
                 'get5_time_to_start': 300,  # warmup 5 minutes
-                'get5_kick_when_no_match_loaded': 1
+                'get5_kick_when_no_match_loaded': 1,
+                'get5_end_match_on_empty_server': 1
             }
         }
 
