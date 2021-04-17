@@ -103,7 +103,7 @@ class CommandsCog(commands.Cog):
             raise commands.UserInputError(message=msg)
         
         linked_role = guild_config.linked_role
-        everyone_role = get(ctx.guild.roles, name='@everyone')
+
         category = await ctx.guild.create_category_channel(args)
         awaitables = [
             ctx.guild.create_text_channel(name=f'{args}-queue', category=category),
@@ -115,12 +115,15 @@ class CommandsCog(commands.Cog):
         queue_channel = results[0]
         lobby_channel = results[1]
 
+        await queue_channel.set_permissions(ctx.guild.self_role, send_messages=True)
+        await lobby_channel.set_permissions(ctx.guild.self_role, connect=True)
+
         awaitables = [
             self.bot.db.update_pug(results[2][0], guild=ctx.guild.id,
-                                                    queue_channel=queue_channel.id,
-                                                    lobby_channel=lobby_channel.id),
-            queue_channel.set_permissions(everyone_role, send_messages=False),
-            lobby_channel.set_permissions(everyone_role, connect=False),
+                                                  queue_channel=queue_channel.id,
+                                                  lobby_channel=lobby_channel.id),
+            queue_channel.set_permissions(ctx.guild.default_role, send_messages=False),
+            lobby_channel.set_permissions(ctx.guild.default_role, connect=False),
             lobby_channel.set_permissions(linked_role, connect=True)
         ]
         await asyncio.gather(*awaitables, loop=self.bot.loop)

@@ -237,7 +237,6 @@ class MatchCog(commands.Cog):
         """"""
         guild = pug_config.guild
         category_position = guild.categories.index(pug_config.lobby_channel.category) + 1
-        everyone_role = get(guild.roles, name='@everyone')
 
         match_catg = await guild.create_category_channel(translate("match-id", match_id), position=category_position)
 
@@ -254,9 +253,12 @@ class MatchCog(commands.Cog):
         team1_channel = channels[0]
         team2_channel = channels[1]
 
+        await team1_channel.set_permissions(guild.self_role, connect=True)
+        await team2_channel.set_permissions(guild.self_role, connect=True)
+
         awaitables = [
-            team1_channel.set_permissions(everyone_role, connect=False, read_messages=True),
-            team2_channel.set_permissions(everyone_role, connect=False, read_messages=True)
+            team1_channel.set_permissions(guild.default_role, connect=False, read_messages=True),
+            team2_channel.set_permissions(guild.default_role, connect=False, read_messages=True)
         ]
 
         for team in [team_one, team_two]:
