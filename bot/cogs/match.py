@@ -6,7 +6,7 @@ from discord.utils import get
 from discord.errors import NotFound
 
 from .message import TeamDraftMessage, MapVetoMessage, MapVoteMessage
-from .utils.utils import translate, get_match_config, align_text
+from .utils.utils import translate, get_match_data, align_text
 
 from random import shuffle, choice
 from traceback import print_exception
@@ -149,7 +149,7 @@ class MatchCog(commands.Cog):
         match_ids = await self.bot.db.get_all_matches()
         if match_ids:
             for match_id in match_ids:
-                match = await get_match_config(self.bot, match_id)
+                match = await get_match_data(self.bot, match_id)
                 try:
                     api_matches = await self.bot.api.matches_status(match.guild_config.auth)
                 except Exception as e:
@@ -227,7 +227,7 @@ class MatchCog(commands.Cog):
 
         try:
             await match.message.edit(embed=embed)
-        except NotFound:
+        except (AttributeError, NotFound):
             pass
         
         if not live:
@@ -284,8 +284,7 @@ class MatchCog(commands.Cog):
         awaitables.append(self.bot.db.update_match(match_id, **match_data))
         await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
 
-        await self.bot.db.insert_match_users(match_id, *[user.id for user in team_one], team='team1')
-        await self.bot.db.insert_match_users(match_id, *[user.id for user in team_two], team='team2')
+        await self.bot.db.insert_match_users(match_id, *[user.id for user in team_one + team_two])
 
     async def remove_teams_channels(self, match):
         """"""
@@ -294,20 +293,18 @@ class MatchCog(commands.Cog):
         banned_users = [guild.get_member(user_id) for user_id in banned_users]
 
         awaitables = []
-        for user in match.team1_users + match.team2_users:
-            if user not in banned_users:
-                awaitables.append(user.add_roles(match.guild_config.linked_role))
-            awaitables.append(user.move_to(match.guild_config.afk_channel))
+        for user in match.players:
+            if user is not None:
+                if user not in banned_users:
+                    awaitables.append(user.add_roles(match.guild_config.linked_role))
+                awaitables.append(user.move_to(match.guild_config.afk_channel))
         await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
 
-        awaitables = [
-            match.team1_channel.delete(),
-            match.team2_channel.delete(),
-            self.bot.db.delete_matches(match.id)
-        ]
-        await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
+        for channel in [match.team1_channel, match.team1_channel, match.category]:
+            try:
+                await channel.delete()
+            except (AttributeError, NotFound):
+                pass
 
-        try:
-            await match.category.delete()
-        except NotFound:
-            pass
+        await self.bot.db.delete_matches(match.id)
+

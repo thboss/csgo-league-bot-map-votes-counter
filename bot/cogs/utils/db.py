@@ -369,16 +369,16 @@ class DBHelper:
 
         return self._get_record_attrs(deleted, 'id')
 
-    async def get_match_users(self, match_id, team):
+    async def get_match_users(self, match_id):
         """ Get all the match users of the match from the match_users table. """
         statement = (
             'SELECT user_id FROM match_users\n'
-            '    WHERE match_id = $1 AND team = $2;'
+            '    WHERE match_id = $1;'
         )
 
         async with self.pool.acquire() as connection:
             async with connection.transaction():
-                match = await connection.fetch(statement, match_id, team)
+                match = await connection.fetch(statement, match_id)
 
         return self._get_record_attrs(match, 'user_id')
 
@@ -394,14 +394,14 @@ class DBHelper:
 
         return self._get_record_attrs(users, 'user_id')
 
-    async def insert_match_users(self, match_id, *user_ids, team=None):
+    async def insert_match_users(self, match_id, *user_ids):
         """ Insert multiple users of a guild into the banned_users table"""
         statement = (
-            'INSERT INTO match_users (match_id, user_id, team)\n'
-            '    VALUES($1, $2, $3);'
+            'INSERT INTO match_users (match_id, user_id)\n'
+            '    VALUES($1, $2);'
         )
 
-        insert_rows = [(match_id, user_id, team) for user_id in user_ids]
+        insert_rows = [(match_id, user_id) for user_id in user_ids]
 
         async with self.pool.acquire() as connection:
             async with connection.transaction():

@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 
 from discord.ext import commands
 from discord.utils import get
+from discord.errors import NotFound
 
 
 time_arg_pattern = re.compile(r'\b((?:(?P<days>[0-9]+)d)|(?:(?P<hours>[0-9]+)h)|(?:(?P<minutes>[0-9]+)m))\b')
@@ -204,10 +205,10 @@ class PUGConfig:
                    [m for m in bot.all_maps.values() if pug_data[m.dev_name]])
 
 
-class MatchConfig:
+class MatchData:
     """"""
     def __init__(self, id, guild_config, pug_config, message, category, team1_channel,
-                 team2_channel, team1_name, team2_name, team1_users, team2_users):
+                 team2_channel, team1_name, team2_name, players):
         self.id = id
         self.guild_config = guild_config
         self.pug_config = pug_config
@@ -217,8 +218,7 @@ class MatchConfig:
         self.team2_channel = team2_channel
         self.team1_name = team1_name
         self.team2_name = team2_name
-        self.team1_users = team1_users
-        self.team2_users = team2_users
+        self.players = players
 
     @classmethod
     async def from_dict(cls, bot, match_data: dict):
@@ -226,20 +226,22 @@ class MatchConfig:
         guild_config = await get_guild_config(bot, match_data['guild'])
         pug_config = await get_pug_config(bot, match_data['pug'])
         guild = guild_config.guild
-        team1_users = await bot.db.get_match_users(match_data['id'], team='team1')
-        team2_users = await bot.db.get_match_users(match_data['id'], team='team2')
+        players = await bot.db.get_match_users(match_data['id'])
+        try:
+            message = await pug_config.queue_channel.fetch_message(match_data['message'])
+        except NotFound:
+            message = None
 
         return cls(match_data['id'],
                    guild_config,
                    pug_config,
-                   await pug_config.queue_channel.fetch_message(match_data['message']),
+                   message,
                    guild.get_channel(match_data['category']),
                    guild.get_channel(match_data['team1_channel']),
                    guild.get_channel(match_data['team2_channel']),
                    match_data['team1_name'],
                    match_data['team2_name'],
-                   [guild.get_member(user_id) for user_id in team1_users],
-                   [guild.get_member(user_id) for user_id in team2_users])
+                   [guild.get_member(user_id) for user_id in players])
 
 
 class UserData:
@@ -275,13 +277,13 @@ async def get_pug_config(bot, row_id, column='id'):
     return PUGConfig.from_dict(bot, pug_data)
 
 
-async def get_match_config(bot, row_id):
+async def get_match_data(bot, row_id):
     """"""
     try:
         match_data = await bot.db.get_match(row_id)
     except AttributeError:
         return
-    return await MatchConfig.from_dict(bot, match_data)
+    return await MatchData.from_dict(bot, match_data)
 
 
 async def get_user_data(bot, guild, row_id, column='discord_id'):
