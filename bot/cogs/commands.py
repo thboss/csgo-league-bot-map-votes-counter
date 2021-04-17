@@ -587,7 +587,7 @@ class CommandsCog(commands.Cog):
             await user.add_roles(guild_config.linked_role)
 
     @commands.command(usage='add <match_id> <team1|team2|spec> <mention>',
-                      brief='Add a player to a live match')
+                      brief=translate('command-add-brief'))
     @commands.has_permissions(kick_members=True)
     async def add(self, ctx, match_id=None, team=None):
         """"""
@@ -628,7 +628,7 @@ class CommandsCog(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(usage='remove <match_id> <mention>',
-                      brief='Remove a player from a live match')
+                      brief=translate('command-remove-brief'))
     @commands.has_permissions(kick_members=True)
     async def remove(self, ctx, match_id=None):
         """"""
@@ -669,7 +669,7 @@ class CommandsCog(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(usage='pause <match_id>',
-                      brief='Pause live match')
+                      brief=translate('command-pause-brief'))
     @commands.has_permissions(kick_members=True)
     async def pause(self, ctx, match_id=None):
         """"""
@@ -683,21 +683,21 @@ class CommandsCog(commands.Cog):
         
         if status_code != 200:
             if status_code == 404:
-                msg = f'Unable to pause match: Match #{match_id} doesn\'t exist!'
+                msg = translate('command-pause-not-found', match_id)
             elif status_code == 403:
-                msg = 'Unable to pause match: No permission!'
+                msg = translate('command-pause-no-permission')
             elif status_code == 401:
-                msg = f'Unable to pause match: Match #{match_id} is already finished!'
+                msg = translate('command-pause-already-finished', match_id)
             else:
-                msg = 'Unable to pause match: Unknown error!'
+                msg = translate('command-pause-unknown-error')
             raise commands.UserInputError(message=msg)
 
-        msg = f'Match #{match_id} paused successfully'
+        msg = translate('command-pause-success', match_id)
         embed = self.bot.embed_template(description=msg)
         await ctx.send(embed=embed)
 
     @commands.command(usage='unpause <match_id>',
-                      brief='Unpause live match')
+                      brief=translate('command-unpause-brief'))
     @commands.has_permissions(kick_members=True)
     async def unpause(self, ctx, match_id=None):
         """"""
@@ -711,16 +711,16 @@ class CommandsCog(commands.Cog):
         
         if status_code != 200:
             if status_code == 404:
-                msg = f'Unable to unpause match: Match #{match_id} doesn\'t exist!'
+                msg = translate('command-unpause-not-found', match_id)
             elif status_code == 403:
-                msg = 'Unable to unpause match: No permission!'
+                msg = translate('command-unpause-no-permission')
             elif status_code == 401:
-                msg = f'Unable to unpause match: Match #{match_id} is already finished!'
+                msg = translate('command-unpause-already-finished', match_id)
             else:
-                msg = 'Unable to unpause match: Unknown error!'
+                msg = translate('command-unpause-unknown-error')
             raise commands.UserInputError(message=msg)
 
-        msg = f'Match #{match_id} unpaused successfully'
+        msg = translate('command-unpause-success', match_id)
         embed = self.bot.embed_template(description=msg)
         await ctx.send(embed=embed)
 
