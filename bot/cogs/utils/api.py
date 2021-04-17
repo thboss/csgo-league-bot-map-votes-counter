@@ -293,7 +293,6 @@ class ApiHelper:
             'players_per_team': len(team_one),
             'min_players_to_ready': len(team_two),
             'match_cvars': {
-                'sv_hibernate_when_empty': 0,
                 'get5_time_to_start': 300,  # warmup 5 minutes
                 'get5_kick_when_no_match_loaded': 1
             }
