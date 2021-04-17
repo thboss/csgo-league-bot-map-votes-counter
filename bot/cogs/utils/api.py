@@ -306,7 +306,7 @@ class ApiHelper:
             spec_ids = [spec.id for spec in spectators]
             spects_data = await self.bot.db.get_users(spec_ids)
             spects_data.sort(key=lambda x: spec_ids.index(x[0]))
-            data['spectator_auths'] = {spects_data[index][1]: spec.desplay_name for index, spec in enumerate(spectators)}
+            data['spectator_auths'] = {spects_data[index][1]: spec.display_name for index, spec in enumerate(spectators)}
 
         async with self.session.post(url=url, json=[data]) as resp:
             return MatchServer(await resp.json(), match_server, self.web_url)
