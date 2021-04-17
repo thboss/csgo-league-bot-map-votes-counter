@@ -45,6 +45,7 @@ A Discord bot to manage CS:GO PUGs. Connects to [G5API](https://github.com/Phlex
     ```py
     DISCORD_BOT_TOKEN= #Bot token from the Discord developer portal
     DISCORD_BOT_LANGUAGE=en # Bot language (key from translations.json), E.g. "en"
+    DISCORD_BOT_PREFIXES= # Bot commands prefixes, E.g. "! q! Q! > ?"
 
     G5API_URL= # URL where the web panel is hosted
 

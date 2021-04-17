@@ -20,14 +20,16 @@ INTENTS_JSON = os.path.join(_CWD, 'intents.json')
 class PUGsBot(commands.AutoShardedBot):
     """ Sub-classed AutoShardedBot modified to fit the needs of the application. """
 
-    def __init__(self, discord_token, web_url, db_connect_url):
+    def __init__(self, prefixes, discord_token, web_url, db_connect_url):
         """ Set attributes and configure bot. """
         # Call parent init
         with open(INTENTS_JSON) as f:
             intents_attrs = json.load(f)
 
+        self.prefixes = prefixes.split()
+
         intents = discord.Intents(**intents_attrs)
-        super().__init__(command_prefix=('g!', 'G!'), case_insensitive=True, intents=intents)
+        super().__init__(command_prefix=self.prefixes, case_insensitive=True, intents=intents)
 
         # Set argument attributes
         self.discord_token = discord_token

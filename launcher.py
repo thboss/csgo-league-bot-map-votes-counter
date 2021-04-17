@@ -11,6 +11,7 @@ load_dotenv()  # Load the environment variables in the local .env file
 
 def run_bot():
     """ Parse the config file and run the bot. """
+    bot_prefixes = os.environ['DISCORD_BOT_PREFIXES']
     # Get database object for bot
     db_connect_url = 'postgresql://{POSTGRESQL_USER}:{POSTGRESQL_PASSWORD}@{POSTGRESQL_HOST}/{POSTGRESQL_DB}'
     db_connect_url = db_connect_url.format(**os.environ)
@@ -22,7 +23,7 @@ def run_bot():
     if api_url.endswith('/'):
         api_url = api_url[:-1]
     # Instantiate bot and run
-    bot = PUGsBot(bot_token, api_url, db_connect_url)
+    bot = PUGsBot(bot_prefixes, bot_token, api_url, db_connect_url)
     bot.run()
 
 
