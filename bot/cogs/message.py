@@ -264,7 +264,7 @@ class TeamDraftMessage(discord.Message):
         captain_method = self.pug_config.captain_method
 
         if captain_method == 'rank':
-            users_dict = dict(zip(await self.bot.api.players_stats(self.users_left), self.users_left))
+            users_dict = dict(zip(await self.bot.api.leaderboard(self.users_left), self.users_left))
             players = list(users_dict.keys())
             players.sort(key=lambda x: x.average_rating)
 

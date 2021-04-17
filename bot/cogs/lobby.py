@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 import asyncio
 
 from .message import ReadyMessage
-from .utils.utils import translate, timedelta_str, get_guild_config, get_pug_config, get_user_config
+from .utils.utils import translate, timedelta_str, get_guild_config, get_pug_config, get_user_data
 
 
 class LobbyCog(commands.Cog):
@@ -86,7 +86,7 @@ class LobbyCog(commands.Cog):
                     others_queued_ids = sum(others_queued_ids, [])
 
                     awaitables = [
-                        get_user_config(self.bot, user.id),
+                        get_user_data(self.bot, user.guild, user.id),
                         self.bot.db.get_queued_users(after_pug_config.id),
                         self.bot.db.get_spect_users(after_pug_config.id),
                         self.bot.db.get_banned_users(after.channel.guild.id),

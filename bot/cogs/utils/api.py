@@ -130,8 +130,7 @@ class ApiHelper:
 
         # Start session
         self.logger.info('Starting API helper client session')
-        self.session = aiohttp.ClientSession(loop=loop, json_serialize=lambda x: json.dumps(x, ensure_ascii=False),
-                                             raise_for_status=True)
+        self.session = aiohttp.ClientSession(loop=loop, json_serialize=lambda x: json.dumps(x, ensure_ascii=False))
 
     async def close(self):
         """ Close the API helper's session. """
@@ -208,6 +207,48 @@ class ApiHelper:
             resp_data = await resp.json()
             return {match['id']: match['end_time'] is None for match in resp_data['matches']}
 
+    async def get_team(self, team_id):
+        """"""
+        url = f'{self.web_url}/api/teams/{team_id}'
+
+        async with self.session.get(url=url) as resp:
+            resp_data = await resp.json()
+            try:
+                return resp_data['team']
+            except KeyError:
+                pass
+
+    async def map_stats(self, match_id, map_number=0):
+        url = f'{self.web_url}/api/mapstats/{match_id}/{map_number}'
+
+        async with self.session.get(url=url) as resp:
+            resp_data = await resp.json()
+            try:
+                return resp_data['mapstat']
+            except KeyError:
+                pass
+
+    async def match_scoreboard(self, match_id):
+        """"""
+        url = f'{self.web_url}/api/playerstats/match/{match_id}'
+        
+        async with self.session.get(url=url) as resp:
+            resp_data = await resp.json()
+            try:
+                players = resp_data['playerstats']
+            except KeyError:
+                pass
+            else:
+                p1 = players[0]['team_id']
+                team1_players, team2_players = [], []
+                for player in players:
+                    if player['team_id'] == p1:
+                        team1_players.append(player)
+                    else:
+                        team2_players.append(player)
+
+                return {'team1_players': team1_players, 'team2_players': team2_players}
+
     async def server_status(self, server_id, auth):
         """"""
         url = f'{self.web_url}/api/servers/{server_id}/status'
@@ -233,6 +274,8 @@ class ApiHelper:
         if not match_server:
             raise ValueError('No servers!')
 
+        total_players = len(team_one) + len(team_two)
+
         url = f'{self.web_url}/api/matches'
         data = {
             'user_id': auth['user_id'],
@@ -247,18 +290,24 @@ class ApiHelper:
             'max_maps': 1,
             'veto_mappool': map_pick.dev_name,
             'skip_veto': 1,
-            'veto_first': 'tram1',
+            'veto_first': 'team1',
             'side_type': 'always_knife',
-            'players_per_team': len(team_one),
-            'min_players_to_ready': len(team_two),
+            'players_per_team': total_players // 2,
+            'min_players_to_ready': total_players // 2,
             'match_cvars': {
+                'sv_hibernate_when_empty': 0,
+                'game_mode': 1 if total_players > 6 else 2,
+                'get5_live_cfg': 'get5/live_competitive.cfg' if total_players > 6 else 'get5/live_wingman.cfg',
                 'get5_time_to_start': 300,  # warmup 5 minutes
-                'get5_kick_when_no_match_loaded': 1
+                'get5_kick_when_no_match_loaded': 1,
+                'get5_end_match_on_empty_server': 1
             }
         }
 
         if spectators:
-            spects_data = await self.bot.db.get_users([user.id for user in spectators])
+            spec_ids = [spec.id for spec in spectators]
+            spects_data = await self.bot.db.get_users(spec_ids)
+            spects_data.sort(key=lambda x: spec_ids.index(x[0]))
             data['spectator_auths'] = {spects_data[index][1]: spec.desplay_name for index, spec in enumerate(spectators)}
 
         async with self.session.post(url=url, json=[data]) as resp:
@@ -274,13 +323,76 @@ class ApiHelper:
         }
 
         async with self.session.get(url=url, json=[data]) as resp:
-            return resp.status == 200
+            return resp.status
 
-    async def players_stats(self, users):
+    async def add_match_player(self, user_data, match_id, team, auth):
         """"""
-        url = f'{self.web_url}/api/leaderboard/players/pug'
+        url = f'{self.web_url}/api/matches/{match_id}/{"addspec" if team == "spec" else "adduser"}'
+        data = {
+            'user_id': auth['user_id'],
+            'user_api': auth['api_key'],
+            'steam_id': user_data.steam,
+            'team_id': team,
+            'nickname': user_data.discord.display_name
+        }
+
+        async with self.session.put(url=url, json=[data]) as resp:
+            return resp.status
+
+    async def remove_match_player(self, user_data, match_id, auth):
+        """"""
+        url = f'{self.web_url}/api/matches/{match_id}/removeuser'
+        data = {
+            'user_id': auth['user_id'],
+            'user_api': auth['api_key'],
+            'steam_id': user_data.steam,
+        }
+
+        async with self.session.put(url=url, json=[data]) as resp:
+            return resp.status
+
+    async def pause_match(self, match_id, auth):
+        """"""
+        url = f'{self.web_url}/api/matches/{match_id}/pause'
+        data = {
+            'user_id': auth['user_id'],
+            'user_api': auth['api_key']
+        }
+
+        async with self.session.get(url=url, json=[data]) as resp:
+            return resp.status
+
+    async def unpause_match(self, match_id, auth):
+        """"""
+        url = f'{self.web_url}/api/matches/{match_id}/unpause'
+        data = {
+            'user_id': auth['user_id'],
+            'user_api': auth['api_key']
+        }
+
+        async with self.session.get(url=url, json=[data]) as resp:
+            return resp.status
+
+    async def player_stats(self, user_data):
+        """"""
+        url = f'{self.web_url}/api/playerstats/{user_data.steam}/pug'
+
+        async with self.session.get(url=url) as resp:
+            resp_data = await resp.json()
+            try:
+                resp_data['pugstats']['discord'] = user_data.discord.id
+                return PlayerStats(resp_data['pugstats'], self.web_url)
+            except KeyError:
+                return PlayerStats(new_player(user_data.steam), self.web_url)
+
+    async def leaderboard(self, users):
+        """"""
         users_data = await self.bot.db.get_users([user.id for user in users])
+        if not users_data:
+            return
         users_dict = dict(zip([data[1] for data in users_data], [data[0] for data in users_data]))
+
+        url = f'{self.web_url}/api/leaderboard/players/pug'
 
         async with self.session.get(url=url) as resp:
             resp_data = await resp.json()

@@ -23,15 +23,10 @@ steps = [
         'DROP TABLE matches;'
     ),
     step(
-        'CREATE TYPE team AS ENUM(\'team1\', \'team2\');',
-        'DROP TYPE team;'
-    ),
-    step(
         (
             'CREATE TABLE match_users(\n'
             '    match_id SMALLSERIAL REFERENCES matches (id) ON DELETE CASCADE,\n'
             '    user_id BIGSERIAL REFERENCES users (discord_id),\n'
-            '    team team DEFAULT NULL,\n'
             '    CONSTRAINT match_user_pkey PRIMARY KEY (match_id, user_id)\n'
             ');'
         ),
