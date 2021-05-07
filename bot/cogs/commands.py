@@ -17,7 +17,7 @@ class CommandsCog(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.lobby_cog = self.bot.get_cog('LobbyCog')
+        self.lobby_cog = bot.get_cog('LobbyCog')
 
     @commands.command(brief=translate('command-setup-brief'))
     @commands.has_permissions(kick_members=True)
@@ -74,12 +74,17 @@ class CommandsCog(commands.Cog):
 
         guild_config = await get_guild_config(self.bot, ctx.guild.id)
         linked_role = guild_config.linked_role
+        prematch_channel = guild_config.prematch_channel
 
         if not linked_role:
             linked_role = await ctx.guild.create_role(name='Linked')
 
+        if not prematch_channel:
+            prematch_channel = await ctx.guild.create_voice_channel(name='Pre Match')
+
         guild_data = {
             'linked_role': linked_role.id,
+            'prematch_channel': prematch_channel.id,
             'user_id': user_id,
             'api_key': api_key
         }
@@ -205,9 +210,10 @@ class CommandsCog(commands.Cog):
         msg = translate('command-empty-success')
         embed = await self.lobby_cog.queue_embed(pug_config, msg)
         await self.lobby_cog.update_last_msg(pug_config, embed)
+        guild_config = await get_guild_config(self.bot, ctx.guild.id)
 
         for member in lobby_channel.members:
-            await member.move_to(ctx.guild.afk_channel)
+            await member.move_to(guild_config.prematch_channel)
 
         self.lobby_cog.locked_lobby[pug_config.id] = False
         _embed = self.bot.embed_template(title=msg, color=self.bot.colors['green'])
@@ -250,10 +256,11 @@ class CommandsCog(commands.Cog):
         await self.lobby_cog.update_last_msg(pug_config, embed)
         msg = translate('command-cap-success', new_cap)
         lobby_channel = pug_config.lobby_channel
+        guild_config = await get_guild_config(self.bot, ctx.guild.id)
 
         awaitables = []
         for player in lobby_channel.members:
-            awaitables.append(player.move_to(ctx.guild.afk_channel))
+            awaitables.append(player.move_to(guild_config.prematch_channel))
         awaitables.append(lobby_channel.edit(user_limit=new_cap))
         await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
 

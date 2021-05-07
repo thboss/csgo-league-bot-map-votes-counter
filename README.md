@@ -49,6 +49,11 @@ A Discord bot to manage CS:GO PUGs. Connects to [G5API](https://github.com/Phlex
 
     G5API_URL= # URL where the web panel is hosted
 
+    GAMEMODE_COMPETITIVE=1
+    GAMEMODE_WINGMAN=2
+    GET5_COMPRTITIVE_CFG="live_competitive.cfg"
+    GET5_WINGMAN_CFG="live_wingman.cfg"
+
     POSTGRESQL_USER= # "PUGs" (if you used the same username)
     POSTGRESQL_PASSWORD= # The DB password you set
     POSTGRESQL_DB= # "PUGs" (if you used the same DB name)
