@@ -5,8 +5,8 @@ A Discord bot to manage CS:GO PUGs. Connects to [G5API](https://github.com/Phlex
 
 
 # Author
-[cameronshinn](https://github.com/cameronshinn) - Developer / Maintainer
-[thboss](https://github.com/thboss) - Developer / Maintainer
+* [cameronshinn](https://github.com/cameronshinn) - Developer / Maintainer
+* [thboss](https://github.com/thboss) - Developer / Maintainer
 
 
 ## Setup
