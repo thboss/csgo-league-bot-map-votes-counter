@@ -297,7 +297,7 @@ class MatchCog(commands.Cog):
             if user is not None:
                 if user not in banned_users:
                     awaitables.append(user.add_roles(match.guild_config.linked_role))
-                awaitables.append(user.move_to(match.guild_config.afk_channel))
+                awaitables.append(user.move_to(match.guild_config.prematch_channel))
         await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
 
         for channel in [match.team1_channel, match.team1_channel, match.category]:

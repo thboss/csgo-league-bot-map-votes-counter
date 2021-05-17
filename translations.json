@@ -1,34 +1,25 @@
 {
     "en": {
         "command-setup-brief":          "Setup user API data (Must have admin perms)",
-        "command-setup-enter-userid":   "**Please enter your user id in [G5API]({})**",
-        "command-setup-footer":         "You have 60 seconds to answer!",
-        "command-setup-no-answer":      "Sorry! Took too long to answer! ❌",
-        "command-setup-user-invalid":   "Sorry! This user id doesn't exist in G5API ❌",
-        "command-setup-user-valid":     "**User id is valid** ✅",
-        "command-setup-enter-key":      "**Please enter your API key from here [G5API]({}/user)**",
-        "command-setup-key-invalid":    "Sorry! Your API key is Invalid! ❌",
-        "command-setup-key-valid":      "**API key is valid** ✅",
-        "command-setup-completed":      "**The setup successfully completed** ✅",
+        "command-setup-success":        "**The setup successfully completed** ✅",
+        "command-setup-footer":         "You can create lobby now, type q!lobby",
 
         "command-lobby-brief":          "Create a new lobby (Must have admin perms)",
         "command-lobby-success":        "Successfully created **{}** lobby",
 
-        "command-link-brief":           "Link a discord account to thier steam id (Must have server kick perms)",
+        "command-link-brief":           "Link a discord account to thier steam id",
         "command-link-already-linked":  "Your account is already linked to [steam account](https://steamcommunity.com/profiles/{})",
         "command-link-steam-used":      "Sorry! This steam account is already linked to another discord account",
         "command-link-steam-invalid":   "Please enter a valid SteamID or community url!",
         "command-link-success":         "Your account has successfully linked to [steam account](https://steamcommunity.com/profiles/{}) ✅",
+        "command-link-footer":          "You can join lobby channels now!",
 
-        "command-unlink-brief":         "Unlink a discord account from thier steam id (Must have server kick perms)",
+        "command-unlink-brief":         "Unlink a discord account from thier steam id",
+        "command-unlink-not-linked":    "You account already not linked!",
+        "command-unlink-in-lobby":      "You cannot unlink your account because you in lobby right now!",
+        "command-unlink-in-match":      "You cannot unlink your account because you in match right now!",
         "command-unlink-success":       "**Player {} unlinked successfully** ✅",
-
-        "command-check-brief":          "Check if discord account is linked to steam id and give them linked role",
-        "command-check-not-linked":     "Sorry! Your Discord is not linked to Steam id!",
-        "command-check-you-banned":     "Sorry! You are banned",
-        "command-check-you-in-match":   "Sorry! You can't get the linked role when you being in a match",
-        "command-check-you-in-lobby":   "Sorry! You can't get the linked role when you being in a lobby",
-        "command-check-success":        "**You are linked to [Steam account](https://steamcommunity.com/profiles/{})** ✅",
+        "command-unlink-footer":        "You cannot join lobby channels now!",
 
         "command-empty-brief":          "Empty the lobby (must have server kick perms)",
         "command-empty-locked":         "Sorry! You cannot empty this lobby while setting up a match",
@@ -100,7 +91,7 @@
         "command-not-setup":            "Sorry! Please do `g!setup` in order to use this command",
         "command-missing-mention-channel":"Sorry! Please mention a queue channel",
 
-        "command-add-brief":            "Add a player to a live match",
+        "command-add-brief":            "Add a player to a live match (Must have kick members perms)",
         "command-add-not-linked":       "Unable to add player: {} is not linked!",
         "command-add-match-not-exist":  "Unable to add player: Match #{} doesn't exist!",
         "command-add-no-permission":    "Unable to add player: No permission!",
@@ -109,7 +100,7 @@
         "command-add-unknown-error":    "Unable to add player: Unknown error!",
         "command-add-success":          "Player {} added successfully to the match #{}",
 
-        "command-remove-brief":            "Remove a player from a live match",
+        "command-remove-brief":            "Remove a player from a live match (Must have kick members perms)",
         "command-remove-not-linked":       "Unable to remove player: {} is not linked!",
         "command-remove-match-not-exist":  "Unable to remove player: Match #{} doesn't exist!",
         "command-remove-no-permission":    "Unable to remove player: No permission!",
@@ -118,14 +109,14 @@
         "command-remove-unknown-error":    "Unable to remove player: Unknown error!",
         "command-remove-success":          "Player {} removed successfully from the match #{}",
 
-        "command-pause-brief":          "Pause a live match",
+        "command-pause-brief":          "Pause a live match (Must have kick members perms)",
         "command-pause-not-found":      "Unable to pause match: Match #{} doesn't exist!",
         "command-pause-no-permission":  "Unable to pause match: No permission!",
         "command-pause-already-finished":"Unable to pause match: Match #{} is already finished!",
         "command-pause-unknown-error":  "Unable to pause match: Unknown error!",
         "command-pause-success":        "Match #{} paused successfully",
 
-        "command-unpause-brief":          "Unpause a live match",
+        "command-unpause-brief":          "Unpause a live match (Must have kick members perms)",
         "command-unpause-not-found":      "Unable to unpause match: Match #{} doesn't exist!",
         "command-unpause-no-permission":  "Unable to unpause match: No permission!",
         "command-unpause-already-finished":"Unable to unpause match: Match #{} is already finished!",
@@ -183,7 +174,7 @@
         "message-maps-left":            "__Maps Left__",
         "message-user-banned-map":      "**{}** banned {}",
 
-        "message-vote-map-started":             "Map vote started! (1 min)",
+        "message-vote-map-started":     "Map vote started! (1 min)",
         "message-maps":                 "Maps",
         "message-vote-map-footer":      "React to either of the map icons below to vote for the corresponding map",
 

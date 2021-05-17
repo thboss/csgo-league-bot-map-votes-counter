@@ -127,7 +127,7 @@ class LobbyCog(commands.Cog):
                             match_cog = self.bot.get_cog('MatchCog')
                             guild_config = await get_guild_config(self.bot, after.channel.guild.id)
                             linked_role = guild_config.linked_role
-                            afk_channel = guild_config.afk_channel
+                            prematch_channel = guild_config.prematch_channel
                             queue_channel = after_pug_config.queue_channel
                             queued_users = [user.guild.get_member(user_id) for user_id in queued_ids]
 
@@ -163,7 +163,7 @@ class LobbyCog(commands.Cog):
                                 for user in queued_users:
                                     awaitables.append(user.add_roles(linked_role))
                                 for user in unreadied:
-                                    awaitables.append(user.move_to(afk_channel))
+                                    awaitables.append(user.move_to(prematch_channel))
                                 await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
                             else:
                                 await ready_msg.clear_reactions()
@@ -176,7 +176,7 @@ class LobbyCog(commands.Cog):
                                     for user in queued_users:
                                         awaitables.append(user.add_roles(linked_role))
                                     for user in queued_users:
-                                        awaitables.append(user.move_to(afk_channel))
+                                        awaitables.append(user.move_to(prematch_channel))
                                     await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
 
                             title = translate('lobby-players-in-lobby')

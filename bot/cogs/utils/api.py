@@ -5,6 +5,11 @@ import asyncio
 import json
 import logging
 import datetime
+from os import environ
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 
 class PlayerStats:
@@ -296,6 +301,8 @@ class ApiHelper:
             'min_players_to_ready': total_players // 2,
             'match_cvars': {
                 'sv_hibernate_when_empty': 0,
+                'game_mode': environ['GAMEMODE_COMPETITIVE'] if total_players > 6 else environ['GAMEMODE_WINGMAN'],
+                'get5_live_cfg': f'get5/{environ["GET5_COMPRTITIVE_CFG"]}' if total_players > 6 else f'get5/{environ["GET5_WINGMAN_CFG"]}',
                 'get5_time_to_start': 300,  # warmup 5 minutes
                 'get5_kick_when_no_match_loaded': 1,
                 'get5_end_match_on_empty_server': 1

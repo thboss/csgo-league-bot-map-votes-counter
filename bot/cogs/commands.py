@@ -17,77 +17,51 @@ class CommandsCog(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.lobby_cog = self.bot.get_cog('LobbyCog')
+        self.lobby_cog = bot.get_cog('LobbyCog')
 
-    @commands.command(brief=translate('command-setup-brief'))
+    @commands.command(brief=translate('command-setup-brief'),
+                      usage='setup <api_user_id> <api_user_key>')
     @commands.has_permissions(kick_members=True)
-    async def setup(self, ctx):
+    async def setup(self, ctx, api_user_id=None, api_user_key=None):
         """"""
-        def check(msg):
-            return msg.author.id == ctx.author.id
-
-        msg = translate('command-setup-enter-userid', self.bot.web_url)
-        embed = self.bot.embed_template(description=msg)
-        footer = translate('command-setup-footer')
-        embed.set_footer(text=footer)
-        await ctx.send(embed=embed)
-
-        try:
-            msg = await self.bot.wait_for('message', check=check, timeout=60.0)
-        except asyncio.TimeoutError:
-            msg = translate('command-setup-no-answer')
+        if not api_user_id or not api_user_key:
+            msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        user_id = int(msg.content)
-
-        is_user = await self.bot.api.is_user(user_id)
+        is_user = await self.bot.api.is_user(int(api_user_id))
         if not is_user:
             msg = translate('command-setup-user-invalid')
             raise commands.UserInputError(message=msg)
 
-        msg = translate('command-setup-user-valid')
-        embed = self.bot.embed_template(description=msg)
-        await ctx.send(embed=embed)
-
-        msg = translate('command-setup-enter-key', self.bot.web_url)
-        embed = self.bot.embed_template(description=msg)
-        embed.set_footer(text=footer)
-        await ctx.send(embed=embed)
-
-        try:
-            msg = await self.bot.wait_for('message', check=check, timeout=60.0)
-        except asyncio.TimeoutError:
-            msg = translate('command-setup-no-answer')
-            raise commands.UserInputError(message=msg)
-
-        api_key = msg.content
-        auth = {'user_id': user_id, 'api_key': api_key}
+        auth = {'user_id': int(api_user_id), 'api_key': api_user_key}
 
         is_valid = await self.bot.api.check_auth(auth)
         if not is_valid:
             msg = translate('command-setup-key-invalid')
             raise commands.UserInputError(message=msg)
 
-        msg = translate('command-setup-key-valid')
-        embed = self.bot.embed_template(description=msg)
-        await ctx.send(embed=embed)
-
         guild_config = await get_guild_config(self.bot, ctx.guild.id)
         linked_role = guild_config.linked_role
+        prematch_channel = guild_config.prematch_channel
 
         if not linked_role:
             linked_role = await ctx.guild.create_role(name='Linked')
 
+        if not prematch_channel:
+            prematch_channel = await ctx.guild.create_voice_channel(name='Pre-Match')
+
         guild_data = {
             'linked_role': linked_role.id,
-            'user_id': user_id,
-            'api_key': api_key
+            'prematch_channel': prematch_channel.id,
+            'user_id': int(api_user_id),
+            'api_key': api_user_key
         }
 
         await self.bot.db.update_guild(ctx.guild.id, **guild_data)
 
-        msg = translate('command-setup-completed')
-        embed = self.bot.embed_template(description=msg)
+        msg = translate('command-setup-success')
+        embed = self.bot.embed_template(description=msg, color=self.bot.colors['green'])
+        embed.set_footer(text=translate('command-setup-footer'))
         await ctx.send(embed=embed)
 
     @commands.command(usage='lobby <name>',
@@ -129,7 +103,6 @@ class CommandsCog(commands.Cog):
         await asyncio.gather(*awaitables, loop=self.bot.loop)
 
         msg = translate('command-lobby-success', args)
-
         embed = self.bot.embed_template(title=msg, color=self.bot.colors['green'])
         await ctx.send(embed=embed)
 
@@ -139,6 +112,7 @@ class CommandsCog(commands.Cog):
         """"""
         guild_config = await check_setup(self.bot, ctx)
         user_data = await get_user_data(self.bot, ctx.guild, ctx.author.id)
+
         if user_data is not None:
             msg = translate('command-link-already-linked', user_data.steam)
             raise commands.UserInputError(message=msg)
@@ -166,19 +140,48 @@ class CommandsCog(commands.Cog):
         await self.bot.db.insert_users(ctx.author.id, str(steam_id), flag)
         await ctx.author.add_roles(guild_config.linked_role)
 
-        title = translate('command-link-success', ctx.author.display_name, steam_id)
+        title = translate('command-link-success', steam_id)
         embed = self.bot.embed_template(description=title, color=self.bot.colors['green'])
+        embed.set_footer(text=translate('command-link-footer'))
         await ctx.send(embed=embed)
 
     @commands.command(brief=translate('command-unlink-brief'))
     async def unlink(self, ctx):
         """"""
         guild_config = await check_setup(self.bot, ctx)
+
+        awaitables = []
+        for pug_id in await self.bot.db.get_guild_pugs(ctx.guild.id):
+            awaitables.append(self.bot.db.get_queued_users(pug_id))
+        queued_ids = await asyncio.gather(*awaitables, loop=self.bot.loop)
+        queued_ids = sum(queued_ids, [])
+
+        awaitables = [
+            get_user_data(self.bot, ctx.guild, ctx.author.id),
+            self.bot.db.get_all_matches_users()
+        ]
+        results = await asyncio.gather(*awaitables, loop=self.bot.loop)
+        is_linked = results[0]
+        matches_users = results[1]
+
+        if not is_linked:
+            msg = translate('command-unlink-not-linked')
+            raise commands.UserInputError(message=msg)
+
+        if ctx.author.id in queued_ids:
+            msg = translate('command-unlink-in-lobby')
+            raise commands.UserInputError(message=msg)
+
+        if ctx.author.id in matches_users:
+            msg = translate('command-unlink-in-match')
+            raise commands.UserInputError(message=msg)
+
         await self.bot.db.delete_users([ctx.author.id])
         await ctx.author.remove_roles(guild_config.linked_role)
 
         title = translate('command-unlink-success', ctx.author)
         embed = self.bot.embed_template(title=title, color=self.bot.colors['green'])
+        embed.set_footer(text=translate('command-unlink-footer'))
         await ctx.send(embed=embed)
 
     @commands.command(usage='empty <mention_queue_channel>',
@@ -205,9 +208,10 @@ class CommandsCog(commands.Cog):
         msg = translate('command-empty-success')
         embed = await self.lobby_cog.queue_embed(pug_config, msg)
         await self.lobby_cog.update_last_msg(pug_config, embed)
+        guild_config = await get_guild_config(self.bot, ctx.guild.id)
 
         for member in lobby_channel.members:
-            await member.move_to(ctx.guild.afk_channel)
+            await member.move_to(guild_config.prematch_channel)
 
         self.lobby_cog.locked_lobby[pug_config.id] = False
         _embed = self.bot.embed_template(title=msg, color=self.bot.colors['green'])
@@ -250,10 +254,11 @@ class CommandsCog(commands.Cog):
         await self.lobby_cog.update_last_msg(pug_config, embed)
         msg = translate('command-cap-success', new_cap)
         lobby_channel = pug_config.lobby_channel
+        guild_config = await get_guild_config(self.bot, ctx.guild.id)
 
         awaitables = []
         for player in lobby_channel.members:
-            awaitables.append(player.move_to(ctx.guild.afk_channel))
+            awaitables.append(player.move_to(guild_config.prematch_channel))
         awaitables.append(lobby_channel.edit(user_limit=new_cap))
         await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
 

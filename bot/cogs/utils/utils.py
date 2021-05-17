@@ -156,11 +156,11 @@ async def check_pug(bot, ctx, queue_id):
 
 class GuildConfig:
     """"""
-    def __init__(self, guild, auth, linked_role, afk_channel):
+    def __init__(self, guild, auth, linked_role, prematch_channel):
         self.guild = guild
         self.auth = auth
         self.linked_role = linked_role
-        self.afk_channel = afk_channel
+        self.prematch_channel = prematch_channel
 
     @classmethod
     def from_dict(cls, bot, guild_data: dict):
@@ -173,7 +173,7 @@ class GuildConfig:
         return cls(guild,
                    auth,
                    guild.get_role(guild_data['linked_role']),
-                   guild.afk_channel)
+                   guild.get_channel(guild_data['prematch_channel']))
 
 
 class PUGConfig:
