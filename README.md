@@ -10,7 +10,7 @@ A Discord bot to manage CS:GO PUGs. Connects to [G5API](https://github.com/Phlex
 
 
 ## Setup
-1. First you must have a bot instance to run this script on. Follow Discord's tutorial [here](https://discord.onl/2019/03/21/how-to-set-up-a-bot-application/) on how to set one up. Be sure to invite it to a server before launch the bot.
+1. First you must have a bot instance to run this script on. Follow Discord's tutorial [here](https://discord.onl/2019/03/21/how-to-set-up-a-bot-application/) on how to set one up.
 
    * The required permissions is `1360362576`.
    * Enable the "server members intent" for your bot, as shown [here](https://discordpy.readthedocs.io/en/latest/intents.html#privileged-intents).
@@ -29,8 +29,8 @@ A Discord bot to manage CS:GO PUGs. Connects to [G5API](https://github.com/Phlex
 5. Run the psql tool with `sudo -u postgres psql` and create a database by running the following commands:
 
     ```sql
-    CREATE ROLE PUGs WITH LOGIN PASSWORD 'yourpassword';
-    CREATE DATABASE PUGs OWNER PUGs;
+    CREATE ROLE "PUGs" WITH LOGIN PASSWORD 'yourpassword';
+    CREATE DATABASE "PUGs" OWNER PUGs;
     ```
 
     Be sure to replace `'yourpassword'` with your own desired password.
