@@ -1,21 +1,18 @@
-[![HitCount](http://hits.dwyl.io/csgo-league/csgo-league-bot.svg)](http://hits.dwyl.io/csgo-league/csgo-league-bot)
-[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/csgo-league/csgo-league-bot/graphs/commit-activity)
-[![GitHub release](https://img.shields.io/github/release/csgo-league/csgo-league-bot.svg)](https://github.com/csgo-league/csgo-league-bot/releases/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
-[![Open Source Love svg3](https://badges.frapsoft.com/os/v3/open-source.svg?v=103)](https://github.com/csgo-league)
-
 # CS:GO PUGs Bot
 A Discord bot to manage CS:GO PUGs. Connects to [G5API](https://github.com/PhlexPlexico/G5API).
+
+* [Invite Test Bot](https://discord.com/api/oauth2/authorize?client_id=816798869421031435&permissions=1360362576&scope=bot)
 
 
 # Author
 [cameronshinn](https://github.com/cameronshinn) - Developer / Maintainer
+[thboss](https://github.com/thboss) - Developer / Maintainer
 
 
 ## Setup
 1. First you must have a bot instance to run this script on. Follow Discord's tutorial [here](https://discord.onl/2019/03/21/how-to-set-up-a-bot-application/) on how to set one up. Be sure to invite it to a server before launch the bot.
 
-   * The required permissions is `administrator`.
+   * The required permissions is `1360362576`.
    * Enable the "server members intent" for your bot, as shown [here](https://discordpy.readthedocs.io/en/latest/intents.html#privileged-intents).
 
 2. Install libpq-dev (Linux only?). This is needed to install the psycopg2 Python package.
@@ -63,14 +60,3 @@ A Discord bot to manage CS:GO PUGs. Connects to [G5API](https://github.com/Phlex
 7. Apply the database migrations by running `python3 migrate.py up`.
 
 8. Run the launcher Python script by running, `python3 launcher.py`.
-
-## Contributions
-
-### Code Style
-This project adheres to the [PEP8 style guide](https://www.python.org/dev/peps/pep-0008/) with 120 character line limits.
-
-### Branches
-Create a branch if you're working on an issue with the issue number and name like so: `100_Title-Separated-By-Dashes`.
-
-### Commit Messages
-Phrase commits in the present tense, e.g. `Fix bug` instead of `Fixed bug`.
