@@ -112,7 +112,10 @@ class LoggingCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        log_lines(logging.INFO, 'Bot is ready to use in %s Discord servers', len(self.bot.guilds))
+        msg = f'Bot is ready to use in {len(self.bot.guilds)} Discord servers:\n'
+        for num, guild in enumerate(self.bot.guilds, start=1):
+            msg += f'{num}. {guild.name} (id={guild.id})\n'
+        log_lines(logging.INFO, msg)
 
     @commands.Cog.listener()
     async def on_command(self, ctx):
