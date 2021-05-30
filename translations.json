@@ -20,6 +20,7 @@
         "command-unlink-in-match":      "You cannot unlink your account because you in match right now!",
         "command-unlink-success":       "**Player {} unlinked successfully** ✅",
         "command-unlink-footer":        "You cannot join lobby channels now!",
+        "command-link-user-is-banned":  "Unable to use this command because you are banned",
 
         "command-empty-brief":          "Empty the lobby (must have server kick perms)",
         "command-empty-locked":         "Sorry! You cannot empty this lobby while setting up a match",

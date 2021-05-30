@@ -2,6 +2,7 @@
 
 from discord.ext import commands
 from discord.utils import get
+from datetime import datetime, timezone
 from steam.steamid import SteamID, from_url
 from iso3166 import countries
 import re
@@ -9,7 +10,7 @@ import asyncio
 
 from .message import MapPoolMessage
 from .utils.utils import (translate, timedelta_str, unbantime, check_setup,
-                          check_pug, get_guild_config, get_user_data, align_text)
+                          check_pug, get_guild_config, get_user_data, get_match_data, align_text)
 
 
 class CommandsCog(commands.Cog):
@@ -112,6 +113,14 @@ class CommandsCog(commands.Cog):
         """"""
         guild_config = await check_setup(self.bot, ctx)
         user_data = await get_user_data(self.bot, ctx.guild, ctx.author.id)
+        banned_users = await self.bot.db.get_banned_users(ctx.guild.id)
+
+        if ctx.author.id in banned_users:
+            msg = translate('command-link-user-is-banned')
+            unban_time = banned_users[ctx.author.id]
+            if unban_time:
+                msg += f' for {timedelta_str(unban_time - datetime.now(timezone.utc))}'
+            raise commands.UserInputError(message=msg)
 
         if user_data is not None:
             msg = translate('command-link-already-linked', user_data.steam)
@@ -158,11 +167,20 @@ class CommandsCog(commands.Cog):
 
         awaitables = [
             get_user_data(self.bot, ctx.guild, ctx.author.id),
-            self.bot.db.get_all_matches_users()
+            self.bot.db.get_all_matches_users(),
+            self.bot.db.get_banned_users(ctx.guild.id)
         ]
         results = await asyncio.gather(*awaitables, loop=self.bot.loop)
         is_linked = results[0]
         matches_users = results[1]
+        banned_users = results[2]
+
+        if ctx.author.id in banned_users:
+            msg = translate('command-link-user-is-banned')
+            unban_time = banned_users[ctx.author.id]
+            if unban_time:
+                msg += f' for {timedelta_str(unban_time - datetime.now(timezone.utc))}'
+            raise commands.UserInputError(message=msg)
 
         if not is_linked:
             msg = translate('command-unlink-not-linked')
@@ -616,6 +634,7 @@ class CommandsCog(commands.Cog):
             msg = translate('command-add-not-linked', user.mention)
             raise commands.UserInputError(message=msg)
 
+        match_id = int(match_id)
         status_code = await self.bot.api.add_match_player(user_data, match_id, team, guild_config.auth)
         
         if status_code != 200:
@@ -630,6 +649,23 @@ class CommandsCog(commands.Cog):
             else:
                 msg = translate('command-add-unknown-error')
             raise commands.UserInputError(message=msg)
+
+        await self.bot.db.insert_match_users(match_id, [user.id])
+        match = await get_match_data(self.bot, match_id)
+        await user.remove_roles(guild_config.linked_role)
+
+        if team == 'team1':
+            await match.team1_channel.set_permissions(user, connect=True)
+            try:
+                await user.move_to(match.team1_channel)
+            except:
+                pass
+        elif team == 'team2':
+            await match.team2_channel.set_permissions(user, connect=True)
+            try:
+                await user.move_to(match.team2_channel)
+            except:
+                pass
 
         msg = translate('command-add-success', user.mention, match_id)
         embed = self.bot.embed_template(description=msg)
@@ -657,6 +693,7 @@ class CommandsCog(commands.Cog):
             msg = translate('command-add-not-linked', user.mention)
             raise commands.UserInputError(message=msg)
 
+        match_id = int(match_id)
         status_code = await self.bot.api.remove_match_player(user_data, match_id, guild_config.auth)
         
         if status_code != 200:
@@ -671,6 +708,16 @@ class CommandsCog(commands.Cog):
             else:
                 msg = translate('command-remove-unknown-error')
             raise commands.UserInputError(message=msg)
+
+        await self.bot.db.delete_match_users(match_id, user.id)
+        match = await get_match_data(self.bot, match_id)
+        await user.add_roles(guild_config.linked_role)
+        await match.team1_channel.set_permissions(user, connect=False)
+        await match.team2_channel.set_permissions(user, connect=False)
+        try:
+            await user.move_to(guild_config.prematch_channel)
+        except:
+            pass
 
         msg = translate('command-remove-success', user.mention, match_id)
         embed = self.bot.embed_template(description=msg)

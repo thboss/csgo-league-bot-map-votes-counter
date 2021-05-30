@@ -407,6 +407,20 @@ class DBHelper:
             async with connection.transaction():
                 await connection.executemany(statement, insert_rows)
 
+    async def delete_match_users(self, match_id, user_id):
+        """ Delete a users of a match from the match_users table. """
+        statement = (
+            'DELETE FROM match_users\n'
+            '    WHERE match_id = $1 AND user_id = $2\n'
+            '    RETURNING user_id;'
+        )
+
+        async with self.pool.acquire() as connection:
+            async with connection.transaction():
+                deleted = await connection.fetch(statement, match_id, user_id)
+
+        return self._get_record_attrs(deleted, 'user_id')
+
     async def clear_match_users(self, match_id):
         """ Delete all users of a match from the match_users table. """
         statement = (
@@ -446,7 +460,7 @@ class DBHelper:
         return await self._get_row('guilds', guild_id, column)
 
     async def get_user(self, user_id, column='discord_id'):
-        """ Get a guild's row from the guilds table. """
+        """ Get a user's row from the guilds table. """
         return await self._get_row('users', user_id, column)
 
     async def update_guild(self, guild_id, **data):
