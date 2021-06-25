@@ -1,6 +1,7 @@
 # logging.py
 
 import __main__
+import discord
 from discord.ext import commands
 import logging
 from logging import config
@@ -116,6 +117,8 @@ class LoggingCog(commands.Cog):
         for num, guild in enumerate(self.bot.guilds, start=1):
             msg += f'{num}. {guild.name} (id={guild.id})\n'
         log_lines(logging.INFO, msg)
+
+        self.bot.activity = discord.Activity(type=discord.ActivityType.watching, name=f'{len(self.bot.guilds)} servers | {self.bot.prefixes[0]}help')
 
     @commands.Cog.listener()
     async def on_command(self, ctx):

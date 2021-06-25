@@ -41,7 +41,7 @@ A Discord bot to manage CS:GO PUGs. Connects to [G5API](https://github.com/Phlex
 
     ```py
     DISCORD_BOT_TOKEN= #Bot token from the Discord developer portal
-    DISCORD_BOT_LANGUAGE=en # Bot language (key from translations.json), E.g. "en"
+    DISCORD_BOT_LANGUAGE="en" # Bot language (key from translations.json), E.g. "en"
     DISCORD_BOT_PREFIXES= # Bot commands prefixes, E.g. "! q! Q! > ?"
 
     G5API_URL= # URL where the web panel is hosted
@@ -50,11 +50,12 @@ A Discord bot to manage CS:GO PUGs. Connects to [G5API](https://github.com/Phlex
     GAMEMODE_WINGMAN=2
     GET5_COMPRTITIVE_CFG="live_competitive.cfg" # match config file in cfg/get5/ for competitive mode
     GET5_WINGMAN_CFG="live_wingman.cfg" # match config file in cfg/get5/ for wingman mode
+    GET5_CAPTAIN_FLAG="DE"
 
     POSTGRESQL_USER= # "PUGs" (if you used the same username)
     POSTGRESQL_PASSWORD= # The DB password you set
     POSTGRESQL_DB= # "PUGs" (if you used the same DB name)
-    POSTGRESQL_HOST= # The IP address of the DB server (127.0.0.1 if running on the same system as the bot)
+    POSTGRESQL_HOST= # The IP address of the DB server ("127.0.0.1" if running on the same system as the bot)
     ```
 
 7. Apply the database migrations by running `python3 migrate.py up`.

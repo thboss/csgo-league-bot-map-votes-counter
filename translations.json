@@ -1,6 +1,7 @@
 {
     "en": {
         "command-setup-brief":          "Setup user API data (Must have admin perms)",
+        "command-setup-key-invalid":    "Invalid credintials",
         "command-setup-success":        "**The setup successfully completed** ✅",
         "command-setup-footer":         "You can create lobby now, type q!lobby",
 
@@ -200,7 +201,6 @@
         "command-setup-user-invalid":   "Извини! Этот идентификатор пользователя не существует в G5API ❌",
         "command-setup-user-valid":     "**Идентификатор пользователя действителен** ✅",
         "command-setup-enter-key":      "**Пожалуйста, введите свой ключ API отсюда [G5API]({}/user)**",
-        "command-setup-key-invalid":    "Извини! Ваш ключ API недействителен! ❌",
         "command-setup-key-valid":      "**Ключ API действителен** ✅",
         "command-setup-completed":      "**Установка успешно завершена** ✅",
 

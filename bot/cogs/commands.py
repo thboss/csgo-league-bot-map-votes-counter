@@ -4,13 +4,16 @@ from discord.ext import commands
 from discord.utils import get
 from datetime import datetime, timezone
 from steam.steamid import SteamID, from_url
-from iso3166 import countries
+from dotenv import load_dotenv
 import re
 import asyncio
+import os
 
 from .message import MapPoolMessage
 from .utils.utils import (translate, timedelta_str, unbantime, check_setup,
                           check_pug, get_guild_config, get_user_data, get_match_data, align_text)
+
+load_dotenv()
 
 
 class CommandsCog(commands.Cog):
@@ -107,7 +110,7 @@ class CommandsCog(commands.Cog):
         embed = self.bot.embed_template(title=msg, color=self.bot.colors['green'])
         await ctx.send(embed=embed)
 
-    @commands.command(usage='link <Steam ID/Profile> <country_flag_code>',
+    @commands.command(usage='link <Steam ID/Profile>',
                       brief=translate('command-link-brief'))
     async def link(self, ctx, *args):
         """"""
@@ -124,11 +127,11 @@ class CommandsCog(commands.Cog):
 
         if user_data is not None:
             msg = translate('command-link-already-linked', user_data.steam)
+            await ctx.author.add_roles(guild_config.linked_role)
             raise commands.UserInputError(message=msg)
 
         try:
             steam_id = SteamID(args[0])
-            flag = countries.get(args[1]).alpha2
         except (IndexError, KeyError):
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
@@ -146,7 +149,7 @@ class CommandsCog(commands.Cog):
             msg = translate('command-link-steam-used')
             raise commands.UserInputError(message=msg)
 
-        await self.bot.db.insert_users(ctx.author.id, str(steam_id), flag)
+        await self.bot.db.insert_users(ctx.author.id, str(steam_id), os.environ['GET5_CAPTAIN_FLAG'])
         await ctx.author.add_roles(guild_config.linked_role)
 
         title = translate('command-link-success', steam_id)
