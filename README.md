@@ -1,7 +1,7 @@
 # CS:GO PUGs Bot
 A Discord bot to manage CS:GO PUGs. Connects to [G5API](https://github.com/PhlexPlexico/G5API).
 
-* [Invite Test Bot](https://discord.com/api/oauth2/authorize?client_id=816798869421031435&permissions=1360362576&scope=bot)
+* [Invite Test Bot](https://dsc.gg/pugs)
 
 
 # Author
