@@ -68,6 +68,38 @@ class CommandsCog(commands.Cog):
         embed.set_footer(text=translate('command-setup-footer'))
         await ctx.send(embed=embed)
 
+    @commands.command(usage='create_server <ip:port> <rcon_password> <server_name|optional> <server_gotv|optional>',
+                      brief=translate('command-create_server-brief'))
+    @commands.has_permissions(administrator=True)
+    async def create_server(self, ctx, *args):
+        """"""
+        guild_config = await check_setup(self.bot, ctx)
+
+        try:
+            ip = args[0].split(':')[0]
+            port = int(args[0].split(':')[1])
+            rcon_pass = args[1]
+            if len(args) > 3:
+                gotv = int(args[3])
+        except (IndexError, TypeError):
+            msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            raise commands.UserInputError(message=msg)
+        
+        if len(args) == 2:
+            result = await self.bot.api.create_server(guild_config.auth, ip, port, rcon_pass)
+        elif len(args) == 3:
+            result = await self.bot.api.create_server(guild_config.auth, ip, port, rcon_pass, args[2])
+        else:
+            result = await self.bot.api.create_server(guild_config.auth, ip, port, rcon_pass, args[2], gotv)
+        
+        if not result:
+            msg = translate('command-create_server-failed')
+            raise commands.UserInputError(message=msg)
+
+        msg = translate('command-create_server-success', ip, port)
+        embed = self.bot.embed_template(title=msg, color=self.bot.colors['green'])
+        await ctx.send(embed=embed)
+
     @commands.command(usage='lobby <name>',
                       brief=translate('command-lobby-brief'))
     @commands.has_permissions(kick_members=True)

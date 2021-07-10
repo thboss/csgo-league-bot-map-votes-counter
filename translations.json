@@ -5,6 +5,10 @@
         "command-setup-success":        "**The setup successfully completed** ✅",
         "command-setup-footer":         "You can create lobby now, type q!lobby",
 
+        "command-create_server-brief":  "Create a new game server for current discord server",
+        "command-create_server-failed": "Sorry! Unable to create a game server!",
+        "command-create_server-success":"Server **{}:{}** successfully added to this discord server.",
+
         "command-lobby-brief":          "Create a new lobby (Must have admin perms)",
         "command-lobby-success":        "Successfully created **{}** lobby",
 

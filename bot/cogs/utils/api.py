@@ -144,7 +144,7 @@ class ApiHelper:
 
     async def is_user(self, user_id):
         """"""
-        url = f'{self.web_url}/api/users'
+        url = f'{self.web_url}/users'
 
         async with self.session.get(url=url) as resp:
             resp_data = await resp.json()
@@ -152,7 +152,7 @@ class ApiHelper:
 
     async def check_auth(self, auth):
         """"""
-        url = f'{self.web_url}/api'
+        url = f'{self.web_url}'
         data = {
             'user_id': auth['user_id'],
             'user_api': auth['api_key'],
@@ -174,7 +174,7 @@ class ApiHelper:
             } for index, user in enumerate(users)
         }
 
-        url = f'{self.web_url}/api/teams'
+        url = f'{self.web_url}/teams'
         data = {
             'user_id': auth['user_id'],
             'user_api': auth['api_key'],
@@ -188,9 +188,28 @@ class ApiHelper:
             resp_data = await resp.json()
             return resp_data['id']
 
+    async def create_server(self, auth, ip, port, rcon_password, server_name="G5 Server", gotv=27020):
+        """"""
+        url = f'{self.web_url}/servers'
+
+        data = {
+            'user_id': auth['user_id'],
+            'user_api': auth['api_key'],
+            "ip_string": ip,
+            "port": port,
+            "display_name": server_name,
+            "rcon_password": rcon_password,
+            "public_server": False,
+            "flag": environ['GET5_CAPTAIN_FLAG'],
+            "gotv_port": gotv,
+        }
+
+        async with self.session.post(url=url, json=[data]) as resp:
+            return resp.status < 400
+
     async def private_servers(self, auth):
         """"""
-        url = f'{self.web_url}/api/servers/myservers'
+        url = f'{self.web_url}/servers/myservers'
         data = {
             'user_id': auth['user_id'],
             'user_api': auth['api_key'],
@@ -202,7 +221,7 @@ class ApiHelper:
 
     async def matches_status(self, auth):
         """"""
-        url = f'{self.web_url}/api/matches/mymatches'
+        url = f'{self.web_url}/matches/mymatches'
         data = {
             'user_id': auth['user_id'],
             'user_api': auth['api_key'],
@@ -214,7 +233,7 @@ class ApiHelper:
 
     async def get_team(self, team_id):
         """"""
-        url = f'{self.web_url}/api/teams/{team_id}'
+        url = f'{self.web_url}/teams/{team_id}'
 
         async with self.session.get(url=url) as resp:
             resp_data = await resp.json()
@@ -224,7 +243,7 @@ class ApiHelper:
                 pass
 
     async def map_stats(self, match_id, map_number=0):
-        url = f'{self.web_url}/api/mapstats/{match_id}/{map_number}'
+        url = f'{self.web_url}/mapstats/{match_id}/{map_number}'
 
         async with self.session.get(url=url) as resp:
             resp_data = await resp.json()
@@ -235,7 +254,7 @@ class ApiHelper:
 
     async def match_scoreboard(self, match_id):
         """"""
-        url = f'{self.web_url}/api/playerstats/match/{match_id}'
+        url = f'{self.web_url}/playerstats/match/{match_id}'
         
         async with self.session.get(url=url) as resp:
             resp_data = await resp.json()
@@ -256,7 +275,7 @@ class ApiHelper:
 
     async def server_status(self, server_id, auth):
         """"""
-        url = f'{self.web_url}/api/servers/{server_id}/status'
+        url = f'{self.web_url}/servers/{server_id}/status'
         data = {
             'user_id': auth['user_id'],
             'user_api': auth['api_key'],
@@ -281,7 +300,7 @@ class ApiHelper:
 
         total_players = len(team_one) + len(team_two)
 
-        url = f'{self.web_url}/api/matches'
+        url = f'{self.web_url}/matches'
         data = {
             'user_id': auth['user_id'],
             'user_api': auth['api_key'],
@@ -319,7 +338,7 @@ class ApiHelper:
 
     async def cancel_match(self, match_id, auth):
         """"""
-        url = f'{self.web_url}/api/matches/{match_id}/cancel'
+        url = f'{self.web_url}/matches/{match_id}/cancel'
         data = {
             'user_id': auth['user_id'],
             'user_api': auth['api_key'],
@@ -331,7 +350,7 @@ class ApiHelper:
 
     async def add_match_player(self, user_data, match_id, team, auth):
         """"""
-        url = f'{self.web_url}/api/matches/{match_id}/{"addspec" if team == "spec" else "adduser"}'
+        url = f'{self.web_url}/matches/{match_id}/{"addspec" if team == "spec" else "adduser"}'
         data = {
             'user_id': auth['user_id'],
             'user_api': auth['api_key'],
@@ -345,7 +364,7 @@ class ApiHelper:
 
     async def remove_match_player(self, user_data, match_id, auth):
         """"""
-        url = f'{self.web_url}/api/matches/{match_id}/removeuser'
+        url = f'{self.web_url}/matches/{match_id}/removeuser'
         data = {
             'user_id': auth['user_id'],
             'user_api': auth['api_key'],
@@ -357,7 +376,7 @@ class ApiHelper:
 
     async def pause_match(self, match_id, auth):
         """"""
-        url = f'{self.web_url}/api/matches/{match_id}/pause'
+        url = f'{self.web_url}/matches/{match_id}/pause'
         data = {
             'user_id': auth['user_id'],
             'user_api': auth['api_key']
@@ -368,7 +387,7 @@ class ApiHelper:
 
     async def unpause_match(self, match_id, auth):
         """"""
-        url = f'{self.web_url}/api/matches/{match_id}/unpause'
+        url = f'{self.web_url}/matches/{match_id}/unpause'
         data = {
             'user_id': auth['user_id'],
             'user_api': auth['api_key']
@@ -379,7 +398,7 @@ class ApiHelper:
 
     async def player_stats(self, user_data):
         """"""
-        url = f'{self.web_url}/api/playerstats/{user_data.steam}/pug'
+        url = f'{self.web_url}/playerstats/{user_data.steam}/pug'
 
         async with self.session.get(url=url) as resp:
             resp_data = await resp.json()
@@ -396,7 +415,7 @@ class ApiHelper:
             return
         users_dict = dict(zip([data[1] for data in users_data], [data[0] for data in users_data]))
 
-        url = f'{self.web_url}/api/leaderboard/players/pug'
+        url = f'{self.web_url}/leaderboard/players/pug'
 
         async with self.session.get(url=url) as resp:
             resp_data = await resp.json()

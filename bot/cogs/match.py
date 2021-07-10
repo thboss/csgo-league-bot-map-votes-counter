@@ -168,8 +168,14 @@ class MatchCog(commands.Cog):
                 await self.remove_teams_channels(match)
             return
 
-        team1_info = await self.bot.api.get_team(scoreboard['team1_players'][0]['team_id'])
-        team2_info = await self.bot.api.get_team(scoreboard['team2_players'][0]['team_id'])
+        try:
+            team1_info = await self.bot.api.get_team(scoreboard['team1_players'][0]['team_id'])
+        except IndexError:
+            team1_info = None
+        try:
+            team2_info = await self.bot.api.get_team(scoreboard['team2_players'][0]['team_id'])
+        except IndexError:
+            team2_info = None
         map_stats = await self.bot.api.map_stats(match_id)
         try:
             team1_name = team1_info['name']
