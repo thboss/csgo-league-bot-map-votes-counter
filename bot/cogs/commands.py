@@ -34,7 +34,7 @@ class CommandsCog(commands.Cog):
 
         is_user = await self.bot.api.is_user(int(api_user_id))
         if not is_user:
-            msg = translate('command-setup-user-invalid')
+            msg = translate('command-setup-key-invalid')
             raise commands.UserInputError(message=msg)
 
         auth = {'user_id': int(api_user_id), 'api_key': api_user_key}
