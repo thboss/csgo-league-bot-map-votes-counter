@@ -79,7 +79,8 @@ class MatchCog(commands.Cog):
         description = f'{translate("match-server-info", match.connect_url, match.connect_command)}\n'
         embed = self.bot.embed_template(title=translate('match-server-ready'), description=description)
 
-        embed.set_author(name=translate("match-id", match.id), url=match.match_page)
+        match_page = f'{self.bot.league_url}/match/{match.id}' if self.bot.league_url else match.match_page
+        embed.set_author(name=translate("match-id", match.id), url=match_page)
         embed.set_thumbnail(url=map_pick[0].image_url)
 
         for team in [team_one, team_two]:
@@ -87,9 +88,11 @@ class MatchCog(commands.Cog):
             team_players = '\n'.join(f'{num}. {user.mention}' for num, user in enumerate(team, start=1))
             embed.add_field(name=team_name, value=team_players)
 
-        embed.add_field(name=translate('match-spectators'),
-                        value=translate('match-no-spectators') if not spectators
-                        else ''.join(f'{num}. {user.mention}\n' for num, user in enumerate(spectators, start=1)))
+        embed.add_field(
+            name=translate('match-spectators'),
+            value=translate('match-no-spectators') if not spectators
+            else ''.join(f'{num}. {user.mention}\n' for num, user in enumerate(spectators, start=1))
+        )
         embed.set_footer(text=translate('match-server-message-footer'))
         return embed
 
@@ -144,7 +147,7 @@ class MatchCog(commands.Cog):
 
         return True
 
-    @tasks.loop(seconds=10.0)
+    @tasks.loop(seconds=20.0)
     async def check_matches(self):
         match_ids = await self.bot.db.get_all_matches()
         if match_ids:
@@ -168,19 +171,13 @@ class MatchCog(commands.Cog):
                 await self.remove_teams_channels(match)
             return
 
+        match_info = await self.bot.api.get_match(match_id)
+        map_stats = await self.bot.api.get_map_stats(match_id)
+
         try:
-            team1_info = await self.bot.api.get_team(scoreboard['team1_players'][0]['team_id'])
-        except IndexError:
-            team1_info = None
-        try:
-            team2_info = await self.bot.api.get_team(scoreboard['team2_players'][0]['team_id'])
-        except IndexError:
-            team2_info = None
-        map_stats = await self.bot.api.map_stats(match_id)
-        try:
-            team1_name = team1_info['name']
-            team2_name = team2_info['name']
-        except (KeyError, TypeError):
+            team1_name = match_info['team1_string']
+            team2_name = match_info['team2_string']
+        except AttributeError:
             team1_name = team2_name = None
         
         # Generate leaderboard text
@@ -214,7 +211,7 @@ class MatchCog(commands.Cog):
             description += f'**End Time:** {end_time}\n'
         if not live:
             if map_stats['demoFile']:
-                description += f'**[Download Demo]({self.bot.web_url}/api/demo/{map_stats["demoFile"]})**'
+                description += f'**[Download Demo]({self.bot.web_url}/demo/{map_stats["demoFile"]})**'
 
         if team1_name:
             match_score = f'{translate("match-id", match_id)}  Team {team1_name}  [{map_stats["team1_score"]}:{map_stats["team2_score"]}]  Team {team2_name}'
@@ -228,7 +225,7 @@ class MatchCog(commands.Cog):
         color = self.bot.colors['green'] if live else self.bot.colors['red']
         embed = self.bot.embed_template(description=description, color=color)
         embed.set_author(name=match_score,
-                         url=f'{self.bot.web_url}/match/{match_id}',
+                         url=f'{self.bot.league_url}/match/{match_id}',
                          icon_url=self.bot.all_maps[map_stats['map_name']].image_url)
 
         try:
@@ -306,7 +303,7 @@ class MatchCog(commands.Cog):
                 awaitables.append(user.move_to(match.guild_config.prematch_channel))
         await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
 
-        for channel in [match.team1_channel, match.team1_channel, match.category]:
+        for channel in [match.team1_channel, match.team2_channel, match.category]:
             try:
                 await channel.delete()
             except (AttributeError, NotFound):

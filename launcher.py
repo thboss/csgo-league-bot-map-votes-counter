@@ -22,8 +22,13 @@ def run_bot():
 
     if api_url.endswith('/'):
         api_url = api_url[:-1]
+    
+    try:
+        league_url = os.environ['LEAGUE_URL']
+    except KeyError:
+        league_url = None
     # Instantiate bot and run
-    bot = PUGsBot(bot_prefixes, bot_token, api_url, db_connect_url)
+    bot = PUGsBot(bot_prefixes, bot_token, api_url, db_connect_url, league_url)
     bot.run()
 
 

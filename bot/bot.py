@@ -20,7 +20,7 @@ INTENTS_JSON = os.path.join(_CWD, 'intents.json')
 class PUGsBot(commands.AutoShardedBot):
     """ Sub-classed AutoShardedBot modified to fit the needs of the application. """
 
-    def __init__(self, prefixes, discord_token, web_url, db_connect_url):
+    def __init__(self, prefixes, discord_token, web_url, db_connect_url, league_url):
         """ Set attributes and configure bot. """
         # Call parent init
         with open(INTENTS_JSON) as f:
@@ -35,6 +35,7 @@ class PUGsBot(commands.AutoShardedBot):
         self.discord_token = discord_token
         self.web_url = web_url
         self.db_connect_url = db_connect_url
+        self.league_url = league_url
         self.all_maps = {}
 
         # Set constants

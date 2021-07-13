@@ -242,7 +242,18 @@ class ApiHelper:
             except KeyError:
                 pass
 
-    async def map_stats(self, match_id, map_number=0):
+    async def get_match(self, match_id):
+        """"""
+        url = f'{self.web_url}/matches/{match_id}'
+
+        async with self.session.get(url=url) as resp:
+            resp_data = await resp.json()
+            try:
+                return resp_data['match']
+            except KeyError:
+                pass
+
+    async def get_map_stats(self, match_id, map_number=0):
         url = f'{self.web_url}/mapstats/{match_id}/{map_number}'
 
         async with self.session.get(url=url) as resp:
@@ -252,7 +263,7 @@ class ApiHelper:
             except KeyError:
                 pass
 
-    async def match_scoreboard(self, match_id):
+    async def get_match_scoreboard(self, match_id):
         """"""
         url = f'{self.web_url}/playerstats/match/{match_id}'
         
