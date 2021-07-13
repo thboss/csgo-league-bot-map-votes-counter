@@ -1,7 +1,7 @@
 # CS:GO PUGs Bot
 A Discord bot to manage CS:GO PUGs. Connects to [G5API](https://github.com/PhlexPlexico/G5API).
 
-* [Invite Test Bot](https://dsc.gg/pugs)
+* [Invite Public Bot](https://top.gg/bot/816798869421031435)
 
 
 # Author
@@ -44,7 +44,8 @@ A Discord bot to manage CS:GO PUGs. Connects to [G5API](https://github.com/Phlex
     DISCORD_BOT_LANGUAGE="en" # Bot language (key from translations.json), E.g. "en"
     DISCORD_BOT_PREFIXES= # Bot commands prefixes, E.g. "! q! Q! > ?"
 
-    G5API_URL= # URL where the web panel is hosted
+    G5API_URL= # Your G5API url E.g. http://g5api.com/api
+    LEAGUE_URL= # Requires setup CSGO League web panel https://github.com/csgo-league/csgo-league-web (optional)
 
     GAMEMODE_COMPETITIVE=1
     GAMEMODE_WINGMAN=2
