@@ -685,7 +685,7 @@ class CommandsCog(commands.Cog):
                 msg = translate('command-add-unknown-error')
             raise commands.UserInputError(message=msg)
 
-        await self.bot.db.insert_match_users(match_id, [user.id])
+        await self.bot.db.insert_match_users(match_id, *[user.id])
         match = await get_match_data(self.bot, match_id)
         await user.remove_roles(guild_config.linked_role)
 
