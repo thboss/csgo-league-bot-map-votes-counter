@@ -1,6 +1,6 @@
 {
     "en": {
-        "command-setup-brief":          "Setup user API data (Must have admin perms)",
+        "command-setup-brief":          "Setup user API data (Must have admin perms)_\n__In order to get your `user_id` and `api_key`, you need to authenticate your steam with our API.__\n__So, [open the link]({}) and sign in your steam and it will redirect to a page that has your `user_id` and `api_key`_",
         "command-setup-key-invalid":    "Invalid credintials",
         "command-setup-success":        "**The setup successfully completed** ✅",
         "command-setup-footer":         "You can create lobby now, type q!lobby",

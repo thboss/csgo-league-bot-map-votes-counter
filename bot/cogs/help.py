@@ -62,13 +62,13 @@ class HelpCog(commands.Cog):
         embed = self.help_embed(translate('help-bot-commands'))
         await ctx.send(embed=embed)
 
-    @commands.command(brief=translate('help-about-brief'))
-    async def about(self, ctx):
-        """ Display the info embed. """
-        description = (
-            f'_{translate("help-bot-description")}_\n\n'
-            f'Source code can be found on [GitHub]({GITHUB})'
-        )
-        embed = self.bot.embed_template(title='__CS:GO PUGs Bot__', description=description)
-        embed.set_thumbnail(url=self.logo)
-        await ctx.send(embed=embed)
+    # @commands.command(brief=translate('help-about-brief'))
+    # async def about(self, ctx):
+    #     """ Display the info embed. """
+    #     description = (
+    #         f'_{translate("help-bot-description")}_\n\n'
+    #         f'Source code can be found on [GitHub]({GITHUB})'
+    #     )
+    #     embed = self.bot.embed_template(title='__CS:GO PUGs Bot__', description=description)
+    #     embed.set_thumbnail(url=self.logo)
+    #     await ctx.send(embed=embed)

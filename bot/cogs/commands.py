@@ -23,7 +23,7 @@ class CommandsCog(commands.Cog):
         self.bot = bot
         self.lobby_cog = bot.get_cog('LobbyCog')
 
-    @commands.command(brief=translate('command-setup-brief'),
+    @commands.command(brief=translate('command-setup-brief', 'http://g5.thboss.xyz:3301'),
                       usage='setup <api_user_id> <api_user_key>')
     @commands.has_permissions(kick_members=True)
     async def setup(self, ctx, api_user_id=None, api_user_key=None):

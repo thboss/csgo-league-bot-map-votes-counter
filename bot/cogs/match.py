@@ -165,7 +165,7 @@ class MatchCog(commands.Cog):
 
     async def update_match(self, match_id, match, live):
         """"""
-        scoreboard = await self.bot.api.match_scoreboard(match_id)
+        scoreboard = await self.bot.api.get_match_scoreboard(match_id)
         if not scoreboard:
             if not live:
                 await self.remove_teams_channels(match)
@@ -210,6 +210,7 @@ class MatchCog(commands.Cog):
             end_time = datetime.fromisoformat(map_stats["end_time"].replace("Z", "+00:00")).strftime("%Y-%m-%d  %H:%M:%S")
             description += f'**End Time:** {end_time}\n'
         if not live:
+            description += f'**[Match page]({self.bot.league_url}/match/{match_id})**\n'
             if map_stats['demoFile']:
                 description += f'**[Download Demo]({self.bot.web_url}/demo/{map_stats["demoFile"]})**'
 

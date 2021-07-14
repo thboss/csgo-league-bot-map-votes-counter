@@ -117,8 +117,7 @@ class LoggingCog(commands.Cog):
         for num, guild in enumerate(self.bot.guilds, start=1):
             msg += f'{num}. {guild.name} (id={guild.id})\n'
         log_lines(logging.INFO, msg)
-
-        self.bot.activity = discord.Activity(type=discord.ActivityType.watching, name=f'{len(self.bot.guilds)} servers | {self.bot.prefixes[0]}help')
+        await self.bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f'{len(self.bot.guilds)} servers | {self.bot.prefixes[0]}help'))
 
     @commands.Cog.listener()
     async def on_command(self, ctx):
@@ -128,7 +127,9 @@ class LoggingCog(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         log_lines(logging.INFO, 'Bot has been added to server "%s" (%s)', guild.name, guild.id)
+        await self.bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f'{len(self.bot.guilds)} servers | {self.bot.prefixes[0]}help'))
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
         log_lines(logging.INFO, 'Bot has been removed from server "%s" (%s)', guild.name, guild.id)
+        await self.bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f'{len(self.bot.guilds)} servers | {self.bot.prefixes[0]}help'))
