@@ -210,7 +210,8 @@ class MatchCog(commands.Cog):
             end_time = datetime.fromisoformat(map_stats["end_time"].replace("Z", "+00:00")).strftime("%Y-%m-%d  %H:%M:%S")
             description += f'**End Time:** {end_time}\n'
         if not live:
-            description += f'**[Match page]({self.bot.league_url}/match/{match_id})**\n'
+            if self.bot.league_url:
+                description += f'**[Match page]({self.bot.league_url}/match/{match_id})**\n'
             if map_stats['demoFile']:
                 description += f'**[Download Demo]({self.bot.web_url}/demo/{map_stats["demoFile"]})**'
 

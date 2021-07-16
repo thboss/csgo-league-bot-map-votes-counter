@@ -5,8 +5,6 @@ import Levenshtein as lev
 
 from .utils.utils import translate
 
-GITHUB = 'https://github.com/thboss/CSGO-PUGs-Bot'  # TODO: Use git API to get link to repo?
-
 
 class HelpCog(commands.Cog):
     """ Handles everything related to the help menu. """
@@ -14,7 +12,7 @@ class HelpCog(commands.Cog):
     def __init__(self, bot):
         """ Set attributes and remove default help command. """
         self.bot = bot
-        self.logo = 'https://raw.githubusercontent.com/csgo-league/csgo-league-bot/master/assets/logo/logo.jpg'
+        self.logo = 'http://league.thboss.xyz/img/logo.jpg'
         self.bot.remove_command('help')
         self.bot.ignore_error_types.add(commands.CommandNotFound)
 
@@ -62,13 +60,12 @@ class HelpCog(commands.Cog):
         embed = self.help_embed(translate('help-bot-commands'))
         await ctx.send(embed=embed)
 
-    # @commands.command(brief=translate('help-about-brief'))
-    # async def about(self, ctx):
-    #     """ Display the info embed. """
-    #     description = (
-    #         f'_{translate("help-bot-description")}_\n\n'
-    #         f'Source code can be found on [GitHub]({GITHUB})'
-    #     )
-    #     embed = self.bot.embed_template(title='__CS:GO PUGs Bot__', description=description)
-    #     embed.set_thumbnail(url=self.logo)
-    #     await ctx.send(embed=embed)
+    @commands.command(brief=translate('help-info-brief'))
+    async def info(self, ctx):
+        """ Display the info embed. """
+        description = (
+            f'{translate("help-bot-description")}'
+        )
+        embed = self.bot.embed_template(title='__G5 Bot__', description=description)
+        embed.set_thumbnail(url=self.logo)
+        await ctx.send(embed=embed)
