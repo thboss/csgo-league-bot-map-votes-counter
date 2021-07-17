@@ -131,30 +131,30 @@ async def create_emojis(bot, guild):
 
 async def check_setup(bot, ctx):
     """"""
-    guild_config = await get_guild_config(bot, ctx.guild.id)
-    if not any(guild_config.auth.values()) or not guild_config.linked_role:
+    guild_data = await get_guild_data(bot, ctx.guild.id)
+    if not any(guild_data.auth.values()) or not guild_data.linked_role or not guild_data.prematch_channel:
         msg = translate('command-not-setup')
         raise commands.UserInputError(message=msg)
 
-    return guild_config
+    return guild_data
 
 
 async def check_pug(bot, ctx, queue_id):
     """"""
     try:
-        pug_config = await get_pug_config(bot, queue_id, 'queue_channel')
+        pug_data = await get_pug_data(bot, queue_id, 'queue_channel')
     except TypeError:
         msg = translate('invalid-usage', bot.command_prefix[0], ctx.command.usage)
         raise commands.UserInputError(message=msg)
 
-    if pug_config is None or ctx.guild != pug_config.guild:
+    if pug_data is None or ctx.guild != pug_data.guild:
         msg = translate('command-missing-mention-channel')
         raise commands.UserInputError(message=msg)
 
-    return pug_config
+    return pug_data
 
 
-class GuildConfig:
+class GuildData:
     """"""
     def __init__(self, guild, auth, linked_role, prematch_channel):
         self.guild = guild
@@ -170,20 +170,24 @@ class GuildConfig:
             'user_id': guild_data['user_id'],
             'api_key': guild_data['api_key']
         }
-        return cls(guild,
-                   auth,
-                   guild.get_role(guild_data['linked_role']),
-                   guild.get_channel(guild_data['prematch_channel']))
+
+        return cls(
+            guild,
+            auth,
+            guild.get_role(guild_data['linked_role']),
+            guild.get_channel(guild_data['prematch_channel'])
+        )
 
 
-class PUGConfig:
+class PUGData:
     """"""
-    def __init__(self, id, guild, queue_channel, lobby_channel, capacity,
+    def __init__(self, id, guild, queue_channel, lobby_channel, last_message, capacity,
                  team_method, captain_method, map_method, mpool):
         self.id = id
         self.guild = guild
         self.queue_channel = queue_channel
         self.lobby_channel = lobby_channel
+        self.last_message = last_message
         self.capacity = capacity
         self.team_method = team_method
         self.captain_method = captain_method
@@ -191,27 +195,37 @@ class PUGConfig:
         self.mpool = mpool
 
     @classmethod
-    def from_dict(cls, bot, pug_data: dict):
+    async def from_dict(cls, bot, pug_data: dict):
         """"""
         guild = bot.get_guild(pug_data['guild'])
-        return cls(pug_data['id'],
-                   guild,
-                   guild.get_channel(pug_data['queue_channel']),
-                   guild.get_channel(pug_data['lobby_channel']),
-                   pug_data['capacity'],
-                   pug_data['team_method'],
-                   pug_data['captain_method'],
-                   pug_data['map_method'],
-                   [m for m in bot.all_maps.values() if pug_data[m.dev_name]])
+        queue_channel = guild.get_channel(pug_data['queue_channel'])
+        lobby_channel = guild.get_channel(pug_data['lobby_channel'])
+        try:
+            last_message = await queue_channel.fetch_message('last_message')
+        except NotFound:
+            last_message = None
+
+        return cls(
+            pug_data['id'],
+            guild,
+            queue_channel,
+            lobby_channel,
+            last_message,
+            pug_data['capacity'],
+            pug_data['team_method'],
+            pug_data['captain_method'],
+            pug_data['map_method'],
+            [m for m in bot.all_maps.values() if pug_data[m.dev_name]]
+        )
 
 
 class MatchData:
     """"""
-    def __init__(self, id, guild_config, pug_config, message, category, team1_channel,
+    def __init__(self, id, guild_data, pug_data, message, category, team1_channel,
                  team2_channel, team1_name, team2_name, players):
         self.id = id
-        self.guild_config = guild_config
-        self.pug_config = pug_config
+        self.guild_data = guild_data
+        self.pug_data = pug_data
         self.message = message
         self.category = category
         self.team1_channel = team1_channel
@@ -223,25 +237,27 @@ class MatchData:
     @classmethod
     async def from_dict(cls, bot, match_data: dict):
         """"""
-        guild_config = await get_guild_config(bot, match_data['guild'])
-        pug_config = await get_pug_config(bot, match_data['pug'])
-        guild = guild_config.guild
+        guild_data = await get_guild_data(bot, match_data['guild'])
+        pug_data = await get_pug_data(bot, match_data['pug'])
+        guild = guild_data.guild
         players = await bot.db.get_match_users(match_data['id'])
         try:
-            message = await pug_config.queue_channel.fetch_message(match_data['message'])
+            message = await pug_data.queue_channel.fetch_message(match_data['message'])
         except NotFound:
             message = None
 
-        return cls(match_data['id'],
-                   guild_config,
-                   pug_config,
-                   message,
-                   guild.get_channel(match_data['category']),
-                   guild.get_channel(match_data['team1_channel']),
-                   guild.get_channel(match_data['team2_channel']),
-                   match_data['team1_name'],
-                   match_data['team2_name'],
-                   [guild.get_member(user_id) for user_id in players])
+        return cls(
+            match_data['id'],
+            guild_data,
+            pug_data,
+            message,
+            guild.get_channel(match_data['category']),
+            guild.get_channel(match_data['team1_channel']),
+            guild.get_channel(match_data['team2_channel']),
+            match_data['team1_name'],
+            match_data['team2_name'],
+            [guild.get_member(user_id) for user_id in players]
+        )
 
 
 class UserData:
@@ -254,27 +270,29 @@ class UserData:
     @classmethod
     def from_dict(cls, user_data: dict, guild):
         """"""
-        return cls(guild.get_member(user_data['discord_id']),
-                   user_data['steam_id'],
-                   user_data['flag'])
+        return cls(
+            guild.get_member(user_data['discord_id']),
+            user_data['steam_id'],
+            user_data['flag']
+        )
 
 
-async def get_guild_config(bot, row_id):
+async def get_guild_data(bot, row_id):
     """"""
     try:
         guild_data = await bot.db.get_guild(row_id)
     except AttributeError:
         return
-    return GuildConfig.from_dict(bot, guild_data)
+    return GuildData.from_dict(bot, guild_data)
 
 
-async def get_pug_config(bot, row_id, column='id'):
+async def get_pug_data(bot, row_id, column='id'):
     """"""
     try:
         pug_data = await bot.db.get_pug(row_id, column)
     except AttributeError:
         return
-    return PUGConfig.from_dict(bot, pug_data)
+    return await PUGData.from_dict(bot, pug_data)
 
 
 async def get_match_data(bot, row_id):
