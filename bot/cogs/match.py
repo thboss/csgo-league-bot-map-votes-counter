@@ -6,7 +6,7 @@ from discord.utils import get
 from discord.errors import NotFound
 
 from .message import TeamDraftMessage, MapVetoMessage, MapVoteMessage
-from .utils.utils import translate, get_match_data, align_text
+from .utils.utils import *
 
 from random import shuffle, choice
 from traceback import print_exception
@@ -45,9 +45,9 @@ class MatchCog(commands.Cog):
 
         return list(map(users_dict.get, team_one)), list(map(users_dict.get, team_two))
 
-    async def draft_teams(self, message, users, pug_config):
+    async def draft_teams(self, message, users, pug_data):
         """"""
-        menu = TeamDraftMessage(message, self.bot, users, pug_config)
+        menu = TeamDraftMessage(message, self.bot, users, pug_data)
         teams = await menu.draft()
         return teams[0], teams[1]
 
@@ -96,22 +96,22 @@ class MatchCog(commands.Cog):
         embed.set_footer(text=translate('match-server-message-footer'))
         return embed
 
-    async def start_match(self, users, message, pug_config, guild_config):
+    async def start_match(self, users, message, pug_data, guild_data):
         """"""
         try:
-            if pug_config.team_method == 'captains':
-                team_one, team_two = await self.draft_teams(message, users, pug_config)
-            elif pug_config.team_method == 'autobalance':
+            if pug_data.team_method == 'captains':
+                team_one, team_two = await self.draft_teams(message, users, pug_data)
+            elif pug_data.team_method == 'autobalance':
                 team_one, team_two = await self.autobalance_teams(users)
             else:  # team_method is random
                 team_one, team_two = await self.randomize_teams(users)
 
-            if pug_config.map_method == 'ban':
-                map_pick = await self.ban_maps(message, pug_config.mpool, team_one[0], team_two[0])
-            elif pug_config.map_method == 'vote':
-                map_pick = await self.vote_maps(message, pug_config.mpool, users)
+            if pug_data.map_method == 'ban':
+                map_pick = await self.ban_maps(message, pug_data.mpool, team_one[0], team_two[0])
+            elif pug_data.map_method == 'vote':
+                map_pick = await self.vote_maps(message, pug_data.mpool, users)
             else:  # map_method is random
-                map_pick = await self.random_map(pug_config.mpool)
+                map_pick = await self.random_map(pug_data.mpool)
         except asyncio.TimeoutError:
             title = translate('match-took-too-long')
             burst_embed = self.bot.embed_template(title=title, color=self.bot.colors['red'])
@@ -121,11 +121,11 @@ class MatchCog(commands.Cog):
         burst_embed = self.bot.embed_template(description=translate('match-looking-server'))
         await message.edit(content='', embed=burst_embed)
 
-        spect_ids = await self.bot.db.get_spect_users(pug_config.id)
-        spectators = [guild_config.guild.get_member(user_id) for user_id in spect_ids]
+        spect_ids = await self.bot.db.get_spect_users(pug_data.id)
+        spectators = [guild_data.guild.get_member(user_id) for user_id in spect_ids]
 
         try:
-            match = await self.bot.api.create_match(team_one, team_two, spectators, map_pick[0], guild_config.auth)
+            match = await self.bot.api.create_match(team_one, team_two, spectators, map_pick[0], guild_data.auth)
         except Exception as e:
             description = translate('match-no-servers')
             burst_embed = self.bot.embed_template(title=translate('match-problem'),
@@ -140,7 +140,7 @@ class MatchCog(commands.Cog):
         burst_embed = await self._embed_server(match, team_one, team_two, spectators, map_pick)
         await message.edit(embed=burst_embed)
 
-        await self.create_teams_channels(match.id, team_one, team_two, pug_config, guild_config, message)
+        await self.create_teams_channels(match.id, team_one, team_two, pug_data, guild_data, message)
 
         if not self.check_matches.is_running():
             self.check_matches.start()
@@ -154,7 +154,7 @@ class MatchCog(commands.Cog):
             for match_id in match_ids:
                 match = await get_match_data(self.bot, match_id)
                 try:
-                    api_matches = await self.bot.api.matches_status(match.guild_config.auth)
+                    api_matches = await self.bot.api.matches_status(match.guild_data.auth)
                 except Exception as e:
                     print_exception(type(e), e, e.__traceback__, file=sys.stderr)
                     continue
@@ -238,10 +238,10 @@ class MatchCog(commands.Cog):
         if not live:
             await self.remove_teams_channels(match)
 
-    async def create_teams_channels(self, match_id, team_one, team_two, pug_config, guild_config, message):
+    async def create_teams_channels(self, match_id, team_one, team_two, pug_data, guild_data, message):
         """"""
-        guild = pug_config.guild
-        category_position = guild.categories.index(pug_config.lobby_channel.category) + 1
+        guild = pug_data.guild
+        category_position = guild.categories.index(pug_data.lobby_channel.category) + 1
 
         match_catg = await guild.create_category_channel(translate("match-id", match_id), position=category_position)
 
@@ -276,8 +276,8 @@ class MatchCog(commands.Cog):
                     awaitables.append(user.move_to(team2_channel))
 
         match_data = {
-            'guild': pug_config.guild.id,
-            'pug': pug_config.id,
+            'guild': pug_data.guild.id,
+            'pug': pug_data.id,
             'message': message.id,
             'category': match_catg.id,
             'team1_channel': team1_channel.id,
@@ -293,7 +293,7 @@ class MatchCog(commands.Cog):
 
     async def remove_teams_channels(self, match):
         """"""
-        guild = match.guild_config.guild
+        guild = match.guild_data.guild
         banned_users = await self.bot.db.get_banned_users(guild.id)
         banned_users = [guild.get_member(user_id) for user_id in banned_users]
 
@@ -301,8 +301,8 @@ class MatchCog(commands.Cog):
         for user in match.players:
             if user is not None:
                 if user not in banned_users:
-                    awaitables.append(user.add_roles(match.guild_config.linked_role))
-                awaitables.append(user.move_to(match.guild_config.prematch_channel))
+                    awaitables.append(user.add_roles(match.guild_data.linked_role))
+                awaitables.append(user.move_to(match.guild_data.prematch_channel))
         await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
 
         for channel in [match.team1_channel, match.team2_channel, match.category]:

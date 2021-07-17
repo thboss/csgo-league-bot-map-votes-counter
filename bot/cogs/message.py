@@ -4,7 +4,7 @@ import asyncio
 import discord
 from random import shuffle, choice
 
-from .utils.utils import translate
+from .utils.utils import *
 
 
 EMOJI_NUMBERS = [u'\u0030\u20E3',
@@ -21,7 +21,7 @@ EMOJI_NUMBERS = [u'\u0030\u20E3',
 
 
 class ReadyMessage(discord.Message):
-    def __init__(self, message, bot, users, guild_config):
+    def __init__(self, message, bot, users, guild_data):
         """"""
         for attr_name in message.__slots__:
             try:
@@ -33,7 +33,7 @@ class ReadyMessage(discord.Message):
 
         self.bot = bot
         self.users = users
-        self.guild_config = guild_config
+        self.guild_data = guild_data
         self.reactors = None
         self.future = None
 
@@ -83,7 +83,7 @@ class ReadyMessage(discord.Message):
 
         awaitables = []
         for user in self.users:
-            awaitables.append(user.remove_roles(self.guild_config.linked_role))
+            awaitables.append(user.remove_roles(self.guild_data.linked_role))
         await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
 
         try:
@@ -98,7 +98,7 @@ class ReadyMessage(discord.Message):
 
 class TeamDraftMessage(discord.Message):
     """"""
-    def __init__(self, message, bot, users, pug_config):
+    def __init__(self, message, bot, users, pug_data):
         """"""
         for attr_name in message.__slots__:
             try:
@@ -110,7 +110,7 @@ class TeamDraftMessage(discord.Message):
 
         self.bot = bot
         self.users = users
-        self.pug_config = pug_config
+        self.pug_data = pug_data
         self.pick_emojis = dict(zip(EMOJI_NUMBERS[1:], users))
         self.pick_order = '1' + '2211'*20
         self.pick_number = None
@@ -261,7 +261,7 @@ class TeamDraftMessage(discord.Message):
         self.teams = [[], []]
         self.pick_number = 0
         self.captains_emojis = []
-        captain_method = self.pug_config.captain_method
+        captain_method = self.pug_data.captain_method
 
         if captain_method == 'rank':
             users_dict = dict(zip(await self.bot.api.leaderboard(self.users_left), self.users_left))
@@ -518,7 +518,7 @@ class MapVoteMessage(discord.Message):
 class MapPoolMessage(discord.Message):
     """"""
 
-    def __init__(self, message, bot, user, pug_config):
+    def __init__(self, message, bot, user, pug_data):
         """"""
         for attr_name in message.__slots__:
             try:
@@ -530,7 +530,7 @@ class MapPoolMessage(discord.Message):
 
         self.bot = bot
         self.user = user
-        self.pug_config = pug_config
+        self.pug_data = pug_data
         self.map_pool = None
         self.active_maps = None
         self.inactive_maps = None
@@ -593,7 +593,7 @@ class MapPoolMessage(discord.Message):
 
     async def pick(self):
         """"""
-        self.map_pool = [m.dev_name for m in self.pug_config.mpool]
+        self.map_pool = [m.dev_name for m in self.pug_data.mpool]
         self.active_maps = {m.emoji: m for m in self.bot.all_maps.values() if m.dev_name in self.map_pool}
         self.inactive_maps = {m.emoji: m for m in self.bot.all_maps.values() if m.dev_name not in self.map_pool}
 
@@ -614,7 +614,7 @@ class MapPoolMessage(discord.Message):
         self.bot.remove_listener(self._process_pick, name='on_reaction_add')
 
         map_pool_data = {m.dev_name: m.dev_name in self.map_pool for m in self.bot.all_maps.values()}
-        await self.bot.db.update_pug(self.pug_config.id, **map_pool_data)
+        await self.bot.db.update_pug(self.pug_data.id, **map_pool_data)
         try:
             await self.clear_reactions()
         except discord.errors.NotFound:

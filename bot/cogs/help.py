@@ -3,7 +3,7 @@
 from discord.ext import commands
 import Levenshtein as lev
 
-from .utils.utils import translate
+from .utils.utils import *
 
 
 class HelpCog(commands.Cog):

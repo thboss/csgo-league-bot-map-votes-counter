@@ -10,11 +10,10 @@ import asyncio
 import os
 
 from .message import MapPoolMessage
-from .utils.utils import (translate, timedelta_str, unbantime, check_setup,
-                          check_pug, get_guild_config, get_user_data, get_match_data, align_text)
+from .utils.utils import *
+
 
 load_dotenv()
-
 
 class CommandsCog(commands.Cog):
     """"""
@@ -44,9 +43,9 @@ class CommandsCog(commands.Cog):
             msg = translate('command-setup-key-invalid')
             raise commands.UserInputError(message=msg)
 
-        guild_config = await get_guild_config(self.bot, ctx.guild.id)
-        linked_role = guild_config.linked_role
-        prematch_channel = guild_config.prematch_channel
+        guild_data = await get_guild_data(self.bot, ctx.guild.id)
+        linked_role = guild_data.linked_role
+        prematch_channel = guild_data.prematch_channel
 
         if not linked_role:
             linked_role = await ctx.guild.create_role(name='Linked')
@@ -73,7 +72,7 @@ class CommandsCog(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def create_server(self, ctx, *args):
         """"""
-        guild_config = await check_setup(self.bot, ctx)
+        guild_data = await check_setup(self.bot, ctx)
 
         try:
             ip = args[0].split(':')[0]
@@ -86,11 +85,11 @@ class CommandsCog(commands.Cog):
             raise commands.UserInputError(message=msg)
         
         if len(args) == 2:
-            result = await self.bot.api.create_server(guild_config.auth, ip, port, rcon_pass)
+            result = await self.bot.api.create_server(guild_data.auth, ip, port, rcon_pass)
         elif len(args) == 3:
-            result = await self.bot.api.create_server(guild_config.auth, ip, port, rcon_pass, args[2])
+            result = await self.bot.api.create_server(guild_data.auth, ip, port, rcon_pass, args[2])
         else:
-            result = await self.bot.api.create_server(guild_config.auth, ip, port, rcon_pass, args[2], gotv)
+            result = await self.bot.api.create_server(guild_data.auth, ip, port, rcon_pass, args[2], gotv)
         
         if not result:
             msg = translate('command-create_server-failed')
@@ -105,14 +104,14 @@ class CommandsCog(commands.Cog):
     @commands.has_permissions(kick_members=True)
     async def lobby(self, ctx, *args):
         """"""
-        guild_config = await check_setup(self.bot, ctx)
+        guild_data = await check_setup(self.bot, ctx)
         args = ' '.join(arg for arg in args)
 
         if not len(args):
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
         
-        linked_role = guild_config.linked_role
+        linked_role = guild_data.linked_role
 
         category = await ctx.guild.create_category_channel(args)
         awaitables = [
@@ -146,7 +145,7 @@ class CommandsCog(commands.Cog):
                       brief=translate('command-link-brief'))
     async def link(self, ctx, *args):
         """"""
-        guild_config = await check_setup(self.bot, ctx)
+        guild_data = await check_setup(self.bot, ctx)
         user_data = await get_user_data(self.bot, ctx.guild, ctx.author.id)
         banned_users = await self.bot.db.get_banned_users(ctx.guild.id)
 
@@ -159,7 +158,7 @@ class CommandsCog(commands.Cog):
 
         if user_data is not None:
             msg = translate('command-link-already-linked', user_data.steam)
-            await ctx.author.add_roles(guild_config.linked_role)
+            await ctx.author.add_roles(guild_data.linked_role)
             raise commands.UserInputError(message=msg)
 
         try:
@@ -182,7 +181,7 @@ class CommandsCog(commands.Cog):
             raise commands.UserInputError(message=msg)
 
         await self.bot.db.insert_users(ctx.author.id, str(steam_id), os.environ['GET5_CAPTAIN_FLAG'])
-        await ctx.author.add_roles(guild_config.linked_role)
+        await ctx.author.add_roles(guild_data.linked_role)
 
         title = translate('command-link-success', steam_id)
         embed = self.bot.embed_template(description=title, color=self.bot.colors['green'])
@@ -192,7 +191,7 @@ class CommandsCog(commands.Cog):
     @commands.command(brief=translate('command-unlink-brief'))
     async def unlink(self, ctx):
         """"""
-        guild_config = await check_setup(self.bot, ctx)
+        guild_data = await check_setup(self.bot, ctx)
 
         awaitables = []
         for pug_id in await self.bot.db.get_guild_pugs(ctx.guild.id):
@@ -230,7 +229,7 @@ class CommandsCog(commands.Cog):
             raise commands.UserInputError(message=msg)
 
         await self.bot.db.delete_users([ctx.author.id])
-        await ctx.author.remove_roles(guild_config.linked_role)
+        await ctx.author.remove_roles(guild_data.linked_role)
 
         title = translate('command-unlink-success', ctx.author)
         embed = self.bot.embed_template(title=title, color=self.bot.colors['green'])
@@ -249,24 +248,24 @@ class CommandsCog(commands.Cog):
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        pug_config = await check_pug(self.bot, ctx, queue_id)
-        lobby_channel = pug_config.lobby_channel
+        pug_data = await check_pug(self.bot, ctx, queue_id)
+        lobby_channel = pug_data.lobby_channel
 
-        if self.lobby_cog.locked_lobby[pug_config.id]:
+        if self.lobby_cog.locked_lobby[pug_data.id]:
             msg = translate('command-empty-locked')
             raise commands.UserInputError(message=msg)
 
-        self.lobby_cog.locked_lobby[pug_config.id] = True
-        await self.bot.db.clear_queued_users(pug_config.id)
+        self.lobby_cog.locked_lobby[pug_data.id] = True
+        await self.bot.db.clear_queued_users(pug_data.id)
         msg = translate('command-empty-success')
-        embed = await self.lobby_cog.queue_embed(pug_config, msg)
-        await self.lobby_cog.update_last_msg(pug_config, embed)
-        guild_config = await get_guild_config(self.bot, ctx.guild.id)
+        embed = await self.lobby_cog.queue_embed(pug_data, msg)
+        await self.lobby_cog.update_last_msg(pug_data, embed)
+        guild_data = await get_guild_data(self.bot, ctx.guild.id)
 
         for member in lobby_channel.members:
-            await member.move_to(guild_config.prematch_channel)
+            await member.move_to(guild_data.prematch_channel)
 
-        self.lobby_cog.locked_lobby[pug_config.id] = False
+        self.lobby_cog.locked_lobby[pug_data.id] = False
         _embed = self.bot.embed_template(title=msg, color=self.bot.colors['green'])
         await ctx.send(embed=_embed)
 
@@ -284,8 +283,8 @@ class CommandsCog(commands.Cog):
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        pug_config = await check_pug(self.bot, ctx, queue_id)
-        curr_cap = pug_config.capacity
+        pug_data = await check_pug(self.bot, ctx, queue_id)
+        curr_cap = pug_data.capacity
 
         if new_cap == curr_cap:
             msg = translate('command-cap-already', curr_cap)
@@ -295,27 +294,27 @@ class CommandsCog(commands.Cog):
             msg = translate('command-cap-out-range')
             raise commands.UserInputError(message=msg)
 
-        if self.lobby_cog.locked_lobby[pug_config.id]:
+        if self.lobby_cog.locked_lobby[pug_data.id]:
             msg = translate('command-cap-locked')
             raise commands.UserInputError(message=msg)
 
-        self.lobby_cog.locked_lobby[pug_config.id] = True
-        await self.bot.db.clear_queued_users(pug_config.id)
-        await self.bot.db.update_pug(pug_config.id, capacity=new_cap)
-        embed = await self.lobby_cog.queue_embed(pug_config, translate('command-empty-success'))
+        self.lobby_cog.locked_lobby[pug_data.id] = True
+        await self.bot.db.clear_queued_users(pug_data.id)
+        await self.bot.db.update_pug(pug_data.id, capacity=new_cap)
+        embed = await self.lobby_cog.queue_embed(pug_data, translate('command-empty-success'))
         embed.set_footer(text=translate('command-cap-footer'))
-        await self.lobby_cog.update_last_msg(pug_config, embed)
+        await self.lobby_cog.update_last_msg(pug_data, embed)
         msg = translate('command-cap-success', new_cap)
-        lobby_channel = pug_config.lobby_channel
-        guild_config = await get_guild_config(self.bot, ctx.guild.id)
+        lobby_channel = pug_data.lobby_channel
+        guild_data = await get_guild_data(self.bot, ctx.guild.id)
 
         awaitables = []
         for player in lobby_channel.members:
-            awaitables.append(player.move_to(guild_config.prematch_channel))
+            awaitables.append(player.move_to(guild_data.prematch_channel))
         awaitables.append(lobby_channel.edit(user_limit=new_cap))
         await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
 
-        self.lobby_cog.locked_lobby[pug_config.id] = False
+        self.lobby_cog.locked_lobby[pug_data.id] = False
 
         embed = self.bot.embed_template(title=msg)
         await ctx.send(embed=embed)
@@ -334,8 +333,8 @@ class CommandsCog(commands.Cog):
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        pug_config = await check_pug(self.bot, ctx, queue_id)
-        curr_method = pug_config.team_method
+        pug_data = await check_pug(self.bot, ctx, queue_id)
+        curr_method = pug_data.team_method
         valid_methods = ['autobalance', 'captains', 'random']
 
         if method is None:
@@ -350,7 +349,7 @@ class CommandsCog(commands.Cog):
                 raise commands.UserInputError(message=msg)
 
             title = translate('command-teams-changed', method)
-            await self.bot.db.update_pug(pug_config.id, team_method=method)
+            await self.bot.db.update_pug(pug_data.id, team_method=method)
 
         embed = self.bot.embed_template(title=title)
         await ctx.send(embed=embed)
@@ -369,8 +368,8 @@ class CommandsCog(commands.Cog):
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        pug_config = await check_pug(self.bot, ctx, queue_id)
-        curr_method = pug_config.captain_method
+        pug_data = await check_pug(self.bot, ctx, queue_id)
+        curr_method = pug_data.captain_method
         valid_methods = ['volunteer', 'rank', 'random']
 
         if new_method is None:
@@ -385,7 +384,7 @@ class CommandsCog(commands.Cog):
                 raise commands.UserInputError(message=msg)
 
             title = translate('command-captains-changed', new_method)
-            await self.bot.db.update_pug(pug_config.id, captain_method=new_method)
+            await self.bot.db.update_pug(pug_data.id, captain_method=new_method)
 
         embed = self.bot.embed_template(title=title)
         await ctx.send(embed=embed)
@@ -404,8 +403,8 @@ class CommandsCog(commands.Cog):
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        pug_config = await check_pug(self.bot, ctx, queue_id)
-        curr_method = pug_config.map_method
+        pug_data = await check_pug(self.bot, ctx, queue_id)
+        curr_method = pug_data.map_method
         valid_methods = ['ban', 'vote', 'random']
 
         if new_method is None:
@@ -420,7 +419,7 @@ class CommandsCog(commands.Cog):
                 raise commands.UserInputError(message=msg)
 
             title = translate('command-maps-changed', new_method)
-            await self.bot.db.update_pug(pug_config.id, map_method=new_method)
+            await self.bot.db.update_pug(pug_data.id, map_method=new_method)
 
         embed = self.bot.embed_template(title=title)
         await ctx.send(embed=embed)
@@ -438,9 +437,9 @@ class CommandsCog(commands.Cog):
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        pug_config = await check_pug(self.bot, ctx, queue_id)
+        pug_data = await check_pug(self.bot, ctx, queue_id)
         message = await ctx.send('Map Pool')
-        menu = MapPoolMessage(message, self.bot, ctx.author, pug_config)
+        menu = MapPoolMessage(message, self.bot, ctx.author, pug_data)
         await menu.pick()
 
     @commands.command(usage='spectators <mention_queue_channel> {+|-} <mention> <mention> ...',
@@ -456,8 +455,8 @@ class CommandsCog(commands.Cog):
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        pug_config = await check_pug(self.bot, ctx, queue_id)
-        curr_spectator_ids = await self.bot.db.get_spect_users(pug_config.id)
+        pug_data = await check_pug(self.bot, ctx, queue_id)
+        curr_spectator_ids = await self.bot.db.get_spect_users(pug_data.id)
         curr_spectators = [ctx.guild.get_member(spectator_id) for spectator_id in curr_spectator_ids]
         spectators = ctx.message.mentions
 
@@ -482,14 +481,14 @@ class CommandsCog(commands.Cog):
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        await self.bot.db.delete_queued_users(pug_config.id, [spectator.id for spectator in spectators])
+        await self.bot.db.delete_queued_users(pug_data.id, [spectator.id for spectator in spectators])
         for spectator in spectators:
             if prefix == '+':
                 if spectator.id in curr_spectator_ids:
                     msg = f'{translate("command-spectators-already", spectator.display_name)}'
                     raise commands.UserInputError(message=msg)
 
-                await self.bot.db.insert_spect_users(pug_config.id, spectator.id)
+                await self.bot.db.insert_spect_users(pug_data.id, spectator.id)
                 title += f'{translate("command-spectators-added", spectator.display_name)}\n'
 
             elif prefix == '-':
@@ -497,7 +496,7 @@ class CommandsCog(commands.Cog):
                     msg = f'{translate("command-spectators-not", spectator.display_name)}'
                     raise commands.UserInputError(message=msg)
 
-                await self.bot.db.delete_spect_users(pug_config.id, spectator.id)
+                await self.bot.db.delete_spect_users(pug_data.id, spectator.id)
                 title += f'{translate("ommand-spectators-removed", spectator.display_name)}\n'
 
         embed = self.bot.embed_template(title=title)
@@ -509,12 +508,12 @@ class CommandsCog(commands.Cog):
     @commands.has_permissions(kick_members=True)
     async def end(self, ctx, match_id=None):
         """"""
-        guild_config = await check_setup(self.bot, ctx)
+        guild_data = await check_setup(self.bot, ctx)
         if match_id is None:
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        status_code = await self.bot.api.cancel_match(match_id, guild_config.auth)
+        status_code = await self.bot.api.cancel_match(match_id, guild_data.auth)
         if status_code != 200:
             if status_code == 404:
                 msg = translate('command-end-not-found', match_id)
@@ -597,7 +596,7 @@ class CommandsCog(commands.Cog):
     @commands.has_permissions(ban_members=True)
     async def ban(self, ctx, *args):
         """"""
-        guild_config = await check_setup(self.bot, ctx)
+        guild_data = await check_setup(self.bot, ctx)
         if len(ctx.message.mentions) == 0:
             msg = translate('command-ban-mention-to-ban')
             raise commands.UserInputError(message=msg)
@@ -608,7 +607,7 @@ class CommandsCog(commands.Cog):
         await self.bot.db.insert_banned_users(ctx.guild.id, *user_ids, unban_time=unban_time)
 
         for user in ctx.message.mentions:
-            await user.remove_roles(guild_config.linked_role)
+            await user.remove_roles(guild_data.linked_role)
 
         banned_users_str = ', '.join(f'**{user.display_name}**' for user in ctx.message.mentions)
         ban_time_str = '' if unban_time is None else f' for {timedelta_str(time_delta)}'
@@ -625,7 +624,7 @@ class CommandsCog(commands.Cog):
     @commands.has_permissions(ban_members=True)
     async def unban(self, ctx):
         """"""
-        guild_config = await check_setup(self.bot, ctx)
+        guild_data = await check_setup(self.bot, ctx)
         if len(ctx.message.mentions) == 0:
             msg = translate('command-unban-mention-to-unban')
             raise commands.UserInputError(message=msg)
@@ -645,14 +644,14 @@ class CommandsCog(commands.Cog):
         await ctx.send(embed=embed)
 
         for user in ctx.message.mentions:
-            await user.add_roles(guild_config.linked_role)
+            await user.add_roles(guild_data.linked_role)
 
     @commands.command(usage='add <match_id> <team1|team2|spec> <mention>',
                       brief=translate('command-add-brief'))
     @commands.has_permissions(kick_members=True)
     async def add(self, ctx, match_id=None, team=None):
         """"""
-        guild_config = await check_setup(self.bot, ctx)
+        guild_data = await check_setup(self.bot, ctx)
 
         try:
             user = ctx.message.mentions[0]
@@ -670,7 +669,7 @@ class CommandsCog(commands.Cog):
             raise commands.UserInputError(message=msg)
 
         match_id = int(match_id)
-        status_code = await self.bot.api.add_match_player(user_data, match_id, team, guild_config.auth)
+        status_code = await self.bot.api.add_match_player(user_data, match_id, team, guild_data.auth)
         
         if status_code != 200:
             if status_code == 404:
@@ -687,7 +686,7 @@ class CommandsCog(commands.Cog):
 
         await self.bot.db.insert_match_users(match_id, *[user.id])
         match = await get_match_data(self.bot, match_id)
-        await user.remove_roles(guild_config.linked_role)
+        await user.remove_roles(guild_data.linked_role)
 
         if team == 'team1':
             await match.team1_channel.set_permissions(user, connect=True)
@@ -711,7 +710,7 @@ class CommandsCog(commands.Cog):
     @commands.has_permissions(kick_members=True)
     async def remove(self, ctx, match_id=None):
         """"""
-        guild_config = await check_setup(self.bot, ctx)
+        guild_data = await check_setup(self.bot, ctx)
 
         try:
             user = ctx.message.mentions[0]
@@ -729,7 +728,7 @@ class CommandsCog(commands.Cog):
             raise commands.UserInputError(message=msg)
 
         match_id = int(match_id)
-        status_code = await self.bot.api.remove_match_player(user_data, match_id, guild_config.auth)
+        status_code = await self.bot.api.remove_match_player(user_data, match_id, guild_data.auth)
         
         if status_code != 200:
             if status_code == 404:
@@ -746,11 +745,11 @@ class CommandsCog(commands.Cog):
 
         await self.bot.db.delete_match_users(match_id, user.id)
         match = await get_match_data(self.bot, match_id)
-        await user.add_roles(guild_config.linked_role)
+        await user.add_roles(guild_data.linked_role)
         await match.team1_channel.set_permissions(user, connect=False)
         await match.team2_channel.set_permissions(user, connect=False)
         try:
-            await user.move_to(guild_config.prematch_channel)
+            await user.move_to(guild_data.prematch_channel)
         except:
             pass
 
@@ -763,13 +762,13 @@ class CommandsCog(commands.Cog):
     @commands.has_permissions(kick_members=True)
     async def pause(self, ctx, match_id=None):
         """"""
-        guild_config = await check_setup(self.bot, ctx)
+        guild_data = await check_setup(self.bot, ctx)
 
         if not match_id:
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        status_code = await self.bot.api.pause_match(match_id, guild_config.auth)
+        status_code = await self.bot.api.pause_match(match_id, guild_data.auth)
         
         if status_code != 200:
             if status_code == 404:
@@ -791,13 +790,13 @@ class CommandsCog(commands.Cog):
     @commands.has_permissions(kick_members=True)
     async def unpause(self, ctx, match_id=None):
         """"""
-        guild_config = await check_setup(self.bot, ctx)
+        guild_data = await check_setup(self.bot, ctx)
 
         if not match_id:
             msg = translate('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        status_code = await self.bot.api.unpause_match(match_id, guild_config.auth)
+        status_code = await self.bot.api.unpause_match(match_id, guild_data.auth)
         
         if status_code != 200:
             if status_code == 404:
