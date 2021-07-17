@@ -44,7 +44,7 @@ class LobbyCog(commands.Cog):
 
         try:
             await msg.edit(embed=embed)
-        except AttributeError:
+        except (AttributeError, NotFound):
             msg = await pug_data.queue_channel.send(embed=embed)
             await self.bot.db.update_pug(pug_data.id, last_message=msg.id)
 
@@ -137,7 +137,7 @@ class LobbyCog(commands.Cog):
                             if queue_msg is not None:
                                 try:
                                     await queue_msg.delete()
-                                except NotFound:
+                                except (NotFound, AttributeError):
                                     pass
 
                             ready_msg = await queue_channel.send(''.join([user.mention for user in queued_users]))
