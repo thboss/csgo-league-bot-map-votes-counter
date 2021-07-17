@@ -195,15 +195,12 @@ class PUGData:
         self.mpool = mpool
 
     @classmethod
-    async def from_dict(cls, bot, pug_data: dict):
+    def from_dict(cls, bot, pug_data: dict):
         """"""
         guild = bot.get_guild(pug_data['guild'])
         queue_channel = guild.get_channel(pug_data['queue_channel'])
         lobby_channel = guild.get_channel(pug_data['lobby_channel'])
-        try:
-            last_message = await queue_channel.fetch_message(pug_data['last_message'])
-        except (NotFound, HTTPException):
-            last_message = None
+        last_message = queue_channel.get_partial_message(pug_data['last_message'])
 
         return cls(
             pug_data['id'],
@@ -292,7 +289,7 @@ async def get_pug_data(bot, row_id, column='id'):
         pug_data = await bot.db.get_pug(row_id, column)
     except AttributeError:
         return
-    return await PUGData.from_dict(bot, pug_data)
+    return PUGData.from_dict(bot, pug_data)
 
 
 async def get_match_data(bot, row_id):
