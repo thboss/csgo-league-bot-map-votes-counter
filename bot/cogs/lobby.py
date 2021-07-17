@@ -40,11 +40,10 @@ class LobbyCog(commands.Cog):
 
     async def update_last_msg(self, pug_data, embed):
         """"""
-        msg = pug_data.last_message
-
         try:
+            msg = await pug_data.last_message.fetch()
             await msg.edit(embed=embed)
-        except (AttributeError, NotFound):
+        except NotFound:
             msg = await pug_data.queue_channel.send(embed=embed)
             await self.bot.db.update_pug(pug_data.id, last_message=msg.id)
 
@@ -133,12 +132,11 @@ class LobbyCog(commands.Cog):
 
                             await after.channel.set_permissions(linked_role, connect=False)
 
-                            queue_msg = after_pug_data.last_message
-                            if queue_msg is not None:
-                                try:
-                                    await queue_msg.delete()
-                                except (NotFound, AttributeError):
-                                    pass
+                            try:
+                                queue_msg = await after_pug_data.last_message.fetch()
+                                await queue_msg.delete()
+                            except NotFound:
+                                pass
 
                             ready_msg = await queue_channel.send(''.join([user.mention for user in queued_users]))
                             ready_users = await self.check_ready(ready_msg, queued_users, guild_data)
