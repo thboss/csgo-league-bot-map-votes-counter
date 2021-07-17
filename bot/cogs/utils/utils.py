@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 from discord.ext import commands
 from discord.utils import get
-from discord.errors import NotFound
+from discord.errors import NotFound, HTTPException
 
 
 time_arg_pattern = re.compile(r'\b((?:(?P<days>[0-9]+)d)|(?:(?P<hours>[0-9]+)h)|(?:(?P<minutes>[0-9]+)m))\b')
@@ -201,8 +201,8 @@ class PUGData:
         queue_channel = guild.get_channel(pug_data['queue_channel'])
         lobby_channel = guild.get_channel(pug_data['lobby_channel'])
         try:
-            last_message = await queue_channel.fetch_message('last_message')
-        except NotFound:
+            last_message = await queue_channel.fetch_message(pug_data['last_message'])
+        except (NotFound, HTTPException):
             last_message = None
 
         return cls(
@@ -243,7 +243,7 @@ class MatchData:
         players = await bot.db.get_match_users(match_data['id'])
         try:
             message = await pug_data.queue_channel.fetch_message(match_data['message'])
-        except NotFound:
+        except (NotFound, HTTPException):
             message = None
 
         return cls(

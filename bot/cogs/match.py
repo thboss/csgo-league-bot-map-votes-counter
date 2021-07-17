@@ -6,7 +6,7 @@ from discord.utils import get
 from discord.errors import NotFound
 
 from .message import TeamDraftMessage, MapVetoMessage, MapVoteMessage
-from . import utils
+from .utils.utils import *
 
 from random import shuffle, choice
 from traceback import print_exception
@@ -76,11 +76,11 @@ class MatchCog(commands.Cog):
 
     async def _embed_server(self, match, team_one, team_two, spectators, map_pick):
         """"""
-        description = f'{utils.translate("match-server-info", match.connect_url, match.connect_command)}\n'
-        embed = self.bot.embed_template(title=utils.translate('match-server-ready'), description=description)
+        description = f'{translate("match-server-info", match.connect_url, match.connect_command)}\n'
+        embed = self.bot.embed_template(title=translate('match-server-ready'), description=description)
 
         match_page = f'{self.bot.league_url}/match/{match.id}' if self.bot.league_url else match.match_page
-        embed.set_author(name=utils.translate("match-id", match.id), url=match_page)
+        embed.set_author(name=translate("match-id", match.id), url=match_page)
         embed.set_thumbnail(url=map_pick[0].image_url)
 
         for team in [team_one, team_two]:
@@ -89,11 +89,11 @@ class MatchCog(commands.Cog):
             embed.add_field(name=team_name, value=team_players)
 
         embed.add_field(
-            name=utils.translate('match-spectators'),
-            value=utils.translate('match-no-spectators') if not spectators
+            name=translate('match-spectators'),
+            value=translate('match-no-spectators') if not spectators
             else ''.join(f'{num}. {user.mention}\n' for num, user in enumerate(spectators, start=1))
         )
-        embed.set_footer(text=utils.translate('match-server-message-footer'))
+        embed.set_footer(text=translate('match-server-message-footer'))
         return embed
 
     async def start_match(self, users, message, pug_data, guild_data):
@@ -113,12 +113,12 @@ class MatchCog(commands.Cog):
             else:  # map_method is random
                 map_pick = await self.random_map(pug_data.mpool)
         except asyncio.TimeoutError:
-            title = utils.translate('match-took-too-long')
+            title = translate('match-took-too-long')
             burst_embed = self.bot.embed_template(title=title, color=self.bot.colors['red'])
             await message.edit(content='', embed=burst_embed)
             return False
 
-        burst_embed = self.bot.embed_template(description=utils.translate('match-looking-server'))
+        burst_embed = self.bot.embed_template(description=translate('match-looking-server'))
         await message.edit(content='', embed=burst_embed)
 
         spect_ids = await self.bot.db.get_spect_users(pug_data.id)
@@ -127,8 +127,8 @@ class MatchCog(commands.Cog):
         try:
             match = await self.bot.api.create_match(team_one, team_two, spectators, map_pick[0], guild_data.auth)
         except Exception as e:
-            description = utils.translate('match-no-servers')
-            burst_embed = self.bot.embed_template(title=utils.translate('match-problem'),
+            description = translate('match-no-servers')
+            burst_embed = self.bot.embed_template(title=translate('match-problem'),
                                                   description=description,
                                                   color=self.bot.colors['red'])
             await message.edit(embed=burst_embed)
@@ -152,7 +152,7 @@ class MatchCog(commands.Cog):
         match_ids = await self.bot.db.get_all_matches()
         if match_ids:
             for match_id in match_ids:
-                match = await utils.get_match_data(self.bot, match_id)
+                match = await get_match_data(self.bot, match_id)
                 try:
                     api_matches = await self.bot.api.matches_status(match.guild_data.auth)
                 except Exception as e:
@@ -195,7 +195,7 @@ class MatchCog(commands.Cog):
             widths = list(map(lambda x: len(max(x, key=len)), data))
             aligns = ['left', 'center', 'center', 'center', 'center', 'center']
             z = zip(data, widths, aligns)
-            formatted_data = [list(map(lambda x: utils.align_text(x, width, align), col)) for col, width, align in z]
+            formatted_data = [list(map(lambda x: align_text(x, width, align), col)) for col, width, align in z]
             formatted_data = list(map(list, zip(*formatted_data)))  # Transpose list for .format() string
             description += '```ml\n    {}  {}  {}  {}  {}  {} \n'.format(*formatted_data[0])
 
@@ -216,7 +216,7 @@ class MatchCog(commands.Cog):
                 description += f'**[Download Demo]({self.bot.web_url}/demo/{map_stats["demoFile"]})**'
 
         if team1_name:
-            match_score = f'{utils.translate("match-id", match_id)}  Team {team1_name}  [{map_stats["team1_score"]}:{map_stats["team2_score"]}]  Team {team2_name}'
+            match_score = f'{translate("match-id", match_id)}  Team {team1_name}  [{map_stats["team1_score"]}:{map_stats["team2_score"]}]  Team {team2_name}'
         else:
             try:
                 match_score = match.message.embeds[0].author.name
@@ -243,13 +243,13 @@ class MatchCog(commands.Cog):
         guild = pug_data.guild
         category_position = guild.categories.index(pug_data.lobby_channel.category) + 1
 
-        match_catg = await guild.create_category_channel(utils.translate("match-id", match_id), position=category_position)
+        match_catg = await guild.create_category_channel(translate("match-id", match_id), position=category_position)
 
         awaitables = [
-            guild.create_voice_channel(name=utils.translate("match-team", team_one[0].display_name),
+            guild.create_voice_channel(name=translate("match-team", team_one[0].display_name),
                                        category=match_catg,
                                        user_limit=len(team_one)),
-            guild.create_voice_channel(name=utils.translate("match-team", team_two[0].display_name),
+            guild.create_voice_channel(name=translate("match-team", team_two[0].display_name),
                                        category=match_catg,
                                        user_limit=len(team_two))
         ]

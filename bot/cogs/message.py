@@ -4,7 +4,7 @@ import asyncio
 import discord
 from random import shuffle, choice
 
-from . import utils
+from .utils.utils import *
 
 
 EMOJI_NUMBERS = [u'\u0030\u20E3',
@@ -40,8 +40,8 @@ class ReadyMessage(discord.Message):
     def _ready_embed(self):
         """"""
         str_value = ''
-        description = utils.translate('message-react-ready', '✅')
-        embed = self.bot.embed_template(title=utils.translate('message-lobby-filled-up'), description=description)
+        description = translate('message-react-ready', '✅')
+        embed = self.bot.embed_template(title=translate('message-lobby-filled-up'), description=description)
 
         for num, user in enumerate(self.users, start=1):
             if user not in self.reactors:
@@ -49,7 +49,7 @@ class ReadyMessage(discord.Message):
             else:
                 str_value += f'✅  {num}. {user.mention}\n '
 
-        embed.add_field(name=f":hourglass: __{utils.translate('message-player')}__",
+        embed.add_field(name=f":hourglass: __{translate('message-player')}__",
                         value='-------------------\n' + str_value)
         return embed
 
@@ -137,14 +137,14 @@ class TeamDraftMessage(discord.Message):
     def _picker_embed(self, title):
         """"""
         embed = self.bot.embed_template(title=title)
-        embed.set_footer(text=utils.translate('message-team-pick-footer'))
+        embed.set_footer(text=translate('message-team-pick-footer'))
 
         for team in self.teams:
-            team_name = f'__{utils.translate("match-team")}__' if len(
-                team) == 0 else f'__{utils.translate("match-team", team[0].display_name)}__'
+            team_name = f'__{translate("match-team")}__' if len(
+                team) == 0 else f'__{translate("match-team", team[0].display_name)}__'
 
             if len(team) == 0:
-                team_players = utils.translate("message-team-empty")
+                team_players = translate("message-team-empty")
             else:
                 team_players = '\n'.join(p.display_name for p in team)
 
@@ -158,20 +158,20 @@ class TeamDraftMessage(discord.Message):
             else:
                 users_left_str += f':heavy_multiplication_x:  ~~{user.mention}~~\n'
 
-        embed.insert_field_at(1, name=utils.translate("message-players-left"), value=users_left_str)
+        embed.insert_field_at(1, name=translate("message-players-left"), value=users_left_str)
 
         status_str = ''
 
-        status_str += f'{utils.translate("message-capt1", self.teams[0][0].mention)}\n' if len(
-            self.teams[0]) else f'{utils.translate("message-capt1")}\n '
+        status_str += f'{translate("message-capt1", self.teams[0][0].mention)}\n' if len(
+            self.teams[0]) else f'{translate("message-capt1")}\n '
 
-        status_str += f'{utils.translate("message-capt2", self.teams[1][0].mention)}\n\n' if len(
-            self.teams[1]) else f'{utils.translate("message-capt2")}\n\n '
+        status_str += f'{translate("message-capt2", self.teams[1][0].mention)}\n\n' if len(
+            self.teams[1]) else f'{translate("message-capt2")}\n\n '
 
-        status_str += utils.translate("message-current-capt", self._active_picker.mention) \
-            if self._active_picker is not None else utils.translate("message-current-capt")
+        status_str += translate("message-current-capt", self._active_picker.mention) \
+            if self._active_picker is not None else translate("message-current-capt")
 
-        embed.add_field(name=utils.translate("message-info"), value=status_str)
+        embed.add_field(name=translate("message-info"), value=status_str)
         return embed
 
     def _pick_player(self, picker, pickee):
@@ -226,7 +226,7 @@ class TeamDraftMessage(discord.Message):
             return
 
         await self.clear_reaction(reaction.emoji)
-        title = utils.translate('message-team-picked', user.display_name, pick.display_name)
+        title = translate('message-team-picked', user.display_name, pick.display_name)
 
         if len(self.users) - len(self.users_left) == 2:
             await self.clear_reaction(self.captains_emojis[0])
@@ -288,7 +288,7 @@ class TeamDraftMessage(discord.Message):
         else:  # captain_method is volunteer
             pass
 
-        await self.edit(embed=self._picker_embed(utils.translate('message-team-draft-begun')))
+        await self.edit(embed=self._picker_embed(translate('message-team-draft-begun')))
 
         if self.users_left:
             for emoji, user in self.pick_emojis.items():
@@ -340,7 +340,7 @@ class MapVetoMessage(discord.Message):
     def _veto_embed(self, title):
         """"""
         embed = self.bot.embed_template(title=title)
-        embed.set_footer(text=utils.translate('message-map-veto-footer'))
+        embed.set_footer(text=translate('message-map-veto-footer'))
         maps_str = ''
 
         if self.map_pool is not None and self.maps_left is not None:
@@ -351,12 +351,12 @@ class MapVetoMessage(discord.Message):
         status_str = ''
 
         if self.captains is not None and self._active_picker is not None:
-            status_str += utils.translate("message-capt1", self.captains[0].mention) + '\n'
-            status_str += utils.translate("message-capt2", self.captains[1].mention) + '\n\n'
-            status_str += utils.translate("message-current-capt", self._active_picker.mention)
+            status_str += translate("message-capt1", self.captains[0].mention) + '\n'
+            status_str += translate("message-capt2", self.captains[1].mention) + '\n\n'
+            status_str += translate("message-current-capt", self._active_picker.mention)
 
-        embed.add_field(name=utils.translate("message-maps-left"), value=maps_str)
-        embed.add_field(name=utils.translate("message-info"), value=status_str)
+        embed.add_field(name=translate("message-maps-left"), value=maps_str)
+        embed.add_field(name=translate("message-info"), value=status_str)
         return embed
 
     async def _process_ban(self, reaction, user):
@@ -375,7 +375,7 @@ class MapVetoMessage(discord.Message):
 
         self.ban_number += 1
         await self.clear_reaction(map_ban.emoji)
-        embed = self._veto_embed(utils.translate('message-user-banned-map', user.display_name, map_ban.name))
+        embed = self._veto_embed(translate('message-user-banned-map', user.display_name, map_ban.name))
         await self.edit(embed=embed)
 
         if len(self.maps_left) == 1:
@@ -395,7 +395,7 @@ class MapVetoMessage(discord.Message):
         if len(self.map_pool) % 2 == 0:
             self.captains.reverse()
 
-        await self.edit(embed=self._veto_embed(utils.translate('message-map-bans-begun')))
+        await self.edit(embed=self._veto_embed(translate('message-map-bans-begun')))
 
         for m in self.map_pool:
             await self.add_reaction(m.emoji)
@@ -434,15 +434,15 @@ class MapVoteMessage(discord.Message):
         self.tie_count = 0
 
     def _vote_embed(self):
-        embed = self.bot.embed_template(title=utils.translate('message-vote-map-started'))
+        embed = self.bot.embed_template(title=translate('message-vote-map-started'))
         str_value = '--------------------\n'
         max_map = max(self.map_votes.values())
         str_value += '\n'.join(
             f'{EMOJI_NUMBERS[self.map_votes[m.emoji]]} {m.emoji} {m.name} '
             f'{"🔸" if self.map_votes[m.emoji] == max_map and self.map_votes[m.emoji] != 0 else ""} '
             for m in self.map_pool)
-        embed.add_field(name=f':repeat_one: :map: {utils.translate("message-maps")}', value=str_value)
-        embed.set_footer(text=utils.translate('message-vote-map-footer'))
+        embed.add_field(name=f':repeat_one: :map: {translate("message-maps")}', value=str_value)
+        embed.set_footer(text=translate('message-vote-map-footer'))
         return embed
 
     async def _process_vote(self, reaction, user):
@@ -537,21 +537,21 @@ class MapPoolMessage(discord.Message):
         self.future = None
 
     def _pick_embed(self, footer=None):
-        embed = self.bot.embed_template(title=utils.translate('message-map-pool'))
+        embed = self.bot.embed_template(title=translate('message-map-pool'))
 
         active_maps = ''.join(f'{emoji}  `{m.name}`\n' for emoji, m in self.active_maps.items())
         inactive_maps = ''.join(f'{emoji}  `{m.name}`\n' for emoji, m in self.inactive_maps.items())
 
         if not inactive_maps:
-            inactive_maps = utils.translate("message-none")
+            inactive_maps = translate("message-none")
 
         if not active_maps:
-            active_maps = utils.translate("message-none")
+            active_maps = translate("message-none")
 
-        embed.add_field(name=utils.translate("message-active-maps"), value=active_maps)
-        embed.add_field(name=utils.translate("message-inactive-maps"), value=inactive_maps)
+        embed.add_field(name=translate("message-active-maps"), value=active_maps)
+        embed.add_field(name=translate("message-inactive-maps"), value=inactive_maps)
         if not footer:
-            footer = utils.translate('message-map-pool-footer')
+            footer = translate('message-map-pool-footer')
         embed.set_footer(text=footer)
         return embed
 

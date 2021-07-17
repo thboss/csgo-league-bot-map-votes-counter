@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 import asyncio
 
 from .message import ReadyMessage
-from . import utils
+from .utils.utils import *
 
 
 class LobbyCog(commands.Cog):
@@ -28,14 +28,14 @@ class LobbyCog(commands.Cog):
             title += f' ({len(queued_ids)}/{pug_data.capacity})'
 
         if len(queued_ids) == 0:
-            queue_str = utils.translate('lobby-is-empty')
+            queue_str = translate('lobby-is-empty')
         else:
             queued_users = [pug_data.guild.get_member(user_id) for user_id in queued_ids]
             queue_str = ''.join(
                 f'{num}. {user.mention}\n' for num, user in enumerate(queued_users, start=1))
 
         embed = self.bot.embed_template(title=title, description=queue_str)
-        embed.set_footer(text=utils.translate('lobby-footer'))
+        embed.set_footer(text=translate('lobby-footer'))
         return embed
 
     async def update_last_msg(self, pug_data, embed):
@@ -61,21 +61,21 @@ class LobbyCog(commands.Cog):
             return
 
         if before.channel is not None:
-            before_pug_data = await utils.get_pug_data(self.bot, before.channel.id, 'lobby_channel')
+            before_pug_data = await get_pug_data(self.bot, before.channel.id, 'lobby_channel')
             if before_pug_data is not None and before.channel == before_pug_data.lobby_channel:
                 if not self.locked_lobby[before_pug_data.id]:
                     removed = await self.bot.db.delete_queued_users(before_pug_data.id, user.id)
 
                     if user.id in removed:
-                        title = utils.translate('lobby-user-removed', user.display_name)
+                        title = translate('lobby-user-removed', user.display_name)
                     else:
-                        title = utils.translate('lobby-user-not-in-lobby', user.display_name)
+                        title = translate('lobby-user-not-in-lobby', user.display_name)
 
                     embed = await self.queue_embed(before_pug_data, title)
                     await self.update_last_msg(before_pug_data, embed)
 
         if after.channel is not None:
-            after_pug_data = await utils.get_pug_data(self.bot, after.channel.id, 'lobby_channel')
+            after_pug_data = await get_pug_data(self.bot, after.channel.id, 'lobby_channel')
             if after_pug_data is not None and after.channel == after_pug_data.lobby_channel:
                 if not self.locked_lobby[after_pug_data.id]:
                     awaitables = []
@@ -86,7 +86,7 @@ class LobbyCog(commands.Cog):
                     others_queued_ids = sum(others_queued_ids, [])
 
                     awaitables = [
-                        utils.get_user_data(self.bot, user.guild, user.id),
+                        get_user_data(self.bot, user.guild, user.id),
                         self.bot.db.get_queued_users(after_pug_data.id),
                         self.bot.db.get_spect_users(after_pug_data.id),
                         self.bot.db.get_banned_users(after.channel.guild.id),
@@ -100,32 +100,32 @@ class LobbyCog(commands.Cog):
                     matches_users = results[4]
 
                     if not is_linked:
-                        title = utils.translate('lobby-user-not-linked', user.display_name)
+                        title = translate('lobby-user-not-linked', user.display_name)
                     elif user.id in banned_users:
-                        title = utils.translate('lobby-user-is-banned', user.display_name)
+                        title = translate('lobby-user-is-banned', user.display_name)
                         unban_time = banned_users[user.id]
                         if unban_time is not None:
-                            title += f' for {utils.timedelta_str(unban_time - datetime.now(timezone.utc))}'
+                            title += f' for {timedelta_str(unban_time - datetime.now(timezone.utc))}'
                     elif user.id in queued_ids:
-                        title = utils.translate('lobby-user-in-lobby', user.display_name)
+                        title = translate('lobby-user-in-lobby', user.display_name)
                     elif user.id in matches_users:
-                        title = utils.translate('lobby-user-in-match', user.display_name)
+                        title = translate('lobby-user-in-match', user.display_name)
                     elif user.id in others_queued_ids:
-                        title = utils.translate('lobby-user-in-another-lobby', user.display_name)
+                        title = translate('lobby-user-in-another-lobby', user.display_name)
                     elif user.id in spect_ids:
-                        title = utils.translate('lobby-user-in-spectators', user.display_name)
+                        title = translate('lobby-user-in-spectators', user.display_name)
                     elif len(queued_ids) >= after_pug_data.capacity:
-                        title = utils.translate('lobby-is-full', user.display_name)
+                        title = translate('lobby-is-full', user.display_name)
                     else:
                         await self.bot.db.insert_queued_users(after_pug_data.id, user.id)
                         queued_ids += [user.id]
-                        title = utils.translate('lobby-user-added', user.display_name)
+                        title = translate('lobby-user-added', user.display_name)
 
                         if len(queued_ids) == after_pug_data.capacity:
                             self.locked_lobby[after_pug_data.id] = True
 
                             match_cog = self.bot.get_cog('MatchCog')
-                            guild_data = await utils.get_guild_data(self.bot, after.channel.guild.id)
+                            guild_data = await get_guild_data(self.bot, after.channel.guild.id)
                             linked_role = guild_data.linked_role
                             prematch_channel = guild_data.prematch_channel
                             queue_channel = after_pug_data.queue_channel
@@ -147,10 +147,10 @@ class LobbyCog(commands.Cog):
 
                             if unreadied:
                                 description = ''.join(f':x: {user.mention}\n' for user in unreadied)
-                                title = utils.translate('lobby-not-all-ready')
+                                title = translate('lobby-not-all-ready')
                                 burst_embed = self.bot.embed_template(title=title, description=description,
                                                                       color=self.bot.colors['red'])
-                                burst_embed.set_footer(text=utils.translate('lobby-unready-footer'))
+                                burst_embed.set_footer(text=translate('lobby-unready-footer'))
 
                                 awaitables = [
                                     ready_msg.clear_reactions(),
@@ -178,7 +178,7 @@ class LobbyCog(commands.Cog):
                                         awaitables.append(user.move_to(prematch_channel))
                                     await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
 
-                            title = utils.translate('lobby-players-in-lobby')
+                            title = translate('lobby-players-in-lobby')
                             embed = await self.queue_embed(after_pug_data, title)
                             await self.update_last_msg(after_pug_data, embed)
 
@@ -194,7 +194,7 @@ class LobbyCog(commands.Cog):
         there_banned_users = False
         unbanned_users = {}
         for guild in self.bot.guilds:
-            guild_data = await utils.get_guild_data(self.bot, guild.id)
+            guild_data = await get_guild_data(self.bot, guild.id)
             guild_bans = await self.bot.db.get_banned_users(guild.id)
 
             if guild_bans:
