@@ -1,7 +1,7 @@
 # lobby.py
 
 from discord.ext import commands, tasks
-from discord.errors import NotFound
+from discord.errors import NotFound, HTTPException
 from discord.utils import get
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -43,7 +43,7 @@ class LobbyCog(commands.Cog):
         try:
             msg = await pug_data.last_message.fetch()
             await msg.edit(embed=embed)
-        except NotFound:
+        except (NotFound, HTTPException):
             msg = await pug_data.queue_channel.send(embed=embed)
             await self.bot.db.update_pug(pug_data.id, last_message=msg.id)
 
@@ -135,7 +135,7 @@ class LobbyCog(commands.Cog):
                             try:
                                 queue_msg = await after_pug_data.last_message.fetch()
                                 await queue_msg.delete()
-                            except NotFound:
+                            except (NotFound, HTTPException):
                                 pass
 
                             ready_msg = await queue_channel.send(''.join([user.mention for user in queued_users]))
