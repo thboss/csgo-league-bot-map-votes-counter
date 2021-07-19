@@ -219,6 +219,21 @@ class ApiHelper:
             resp_data = await resp.json()
             return [server for server in resp_data['servers'] if not server['in_use']]
 
+    async def public_servers(self):
+        """"""
+        url = f'{self.web_url}/servers/available'
+
+        async with self.session.get(url=url) as resp:
+            resp_data = await resp.json()
+            return [server for server in resp_data['servers']]
+
+    async def server_status(self, server_id):
+        """"""
+        url = f'{self.web_url}/servers/{server_id}/status'
+
+        async with self.session.get(url=url) as resp:
+            return resp.status < 400
+
     async def matches_status(self, auth):
         """"""
         url = f'{self.web_url}/matches/mymatches'
@@ -284,25 +299,17 @@ class ApiHelper:
 
                 return {'team1_players': team1_players, 'team2_players': team2_players}
 
-    async def server_status(self, server_id, auth):
-        """"""
-        url = f'{self.web_url}/servers/{server_id}/status'
-        data = {
-            'user_id': auth['user_id'],
-            'user_api': auth['api_key'],
-        }
-
-        async with self.session.get(url=url, json=[data]) as resp:
-            return resp.status < 400
-
     async def create_match(self, team_one, team_two, spectators, map_pick, auth):
         """"""
         team1_id = await self.create_team(team_one, auth)
         team2_id = await self.create_team(team_two, auth)
         servers = await self.private_servers(auth)
+        if not servers:
+            servers = await self.public_servers()
+
         match_server = None
         for server in servers:
-            if await self.server_status(server['id'], auth):
+            if await self.server_status(server['id']):
                 match_server = server
                 break
 
