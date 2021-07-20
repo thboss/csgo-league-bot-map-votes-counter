@@ -120,6 +120,8 @@ class PUGsBot(commands.AutoShardedBot):
     async def on_guild_remove(self, guild):
         """ Delete the recently removed guild from the guilds table. """
         await self.db.delete_guilds(guild.id)
+        if self.guilds:
+            await create_emojis(self, self.guilds[0])
 
     async def on_guild_channel_delete(self, channel):
         """"""
