@@ -109,7 +109,7 @@ async def create_emojis(bot, guild):
     icons_dic = 'assets/maps/icons/'
     icons = os.listdir(icons_dic)
     try:
-        emojis = [e.name for e in guild.emojis]
+        guild_emojis = [e.name for e in guild.emojis]
     except IndexError:
         return
 
@@ -117,16 +117,17 @@ async def create_emojis(bot, guild):
         if icon.endswith('.png') and '-' in icon and os.stat(icons_dic + icon).st_size < 256000:
             emoji_name = icon.split('-')[0]
             emoji_dev = icon.split('-')[1].split('.')[0]
-            if emoji_dev not in emojis:
+            if emoji_dev in guild_emojis:
+                emoji = get(guild.emojis, name=emoji_dev)
+                bot.all_maps[emoji_dev] = Map(
+                    emoji_name,
+                    emoji_dev,
+                    f'<:{emoji_dev}:{emoji.id}>',
+                    f'{url_path}{icon.replace(" ", "%20")}'
+                )
+            else:
                 with open(icons_dic + icon, 'rb') as image:
                     emoji = await guild.create_custom_emoji(name=emoji_dev, image=image.read())
-            else:
-                emoji = get(guild.emojis, name=emoji_dev)
-
-                bot.all_maps[emoji_dev] = Map(emoji_name,
-                                              emoji_dev,
-                                              f'<:{emoji_dev}:{emoji.id}>',
-                                              f'{url_path}{icon.replace(" ", "%20")}')
 
 
 async def check_setup(bot, ctx):
